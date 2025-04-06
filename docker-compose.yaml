@@ -1,0 +1,22 @@
+services: #services needed to run laravel
+  server:
+    image: bitnami/laravel #name of dockerhub image we are using
+    volumes: #a storage per container so in case a container deleted we will still have the actual data
+      - ./backend:/app #the dot is the actual directory synced woth the app directory which is in side the container
+    environment:
+      - LARAVEL_DATABASE_HOST=database
+      - LARAVEL_DATABASE_NAME=laraveldb
+      - LARAVEL_DATABASE_USER=root
+      - LARAVEL_DATABASE_PASSWORD=1234
+      - LARAVEL_DATABASE_PORT=3306
+    restart: always #always restart my container if it shutdown or crashed etc...
+    ports:
+      - 8000:8000 #whenever iam on port 8000 i want the machine to be on poert 8000, left my machine, right docker container
+    #command: ["php", "artisan", "migrate"]
+    command: ./dockershell.sh
+
+  database:
+    image: mysql:8.0
+    environment:
+      - MYSQL_ROOT_PASSWORD=1234
+      - MYSQL_DATABASE=laraveldb

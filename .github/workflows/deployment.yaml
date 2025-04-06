@@ -25,60 +25,62 @@ jobs:
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_KEY }}
+          key: ${{ secrets.EC2_KEY }} # Fixed: Consistent key secret name
           script: |
             sudo apt-get remove -y docker docker-engine docker.io containerd runc || true
             sudo apt-get update
-
             sudo apt-get install -y ca-certificates curl gnupg
-
             sudo install -m 0755 -d /etc/apt/keyrings
             curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
             sudo chmod a+r /etc/apt/keyrings/docker.gpg
-
             echo \
               "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
               $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
               sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-
             sudo apt-get update
             sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-
             sudo systemctl enable --now docker
 
       - name: Deploy Laravel
-  uses: appleboy/ssh-action@v1
-  with:
-    host: ${{ secrets.EC2_HOST }}
-    username: ${{ secrets.EC2_USER }}
-    key: ${{ secrets.EC2_SSH_KEY }}
-    script: |
-      sudo mkdir -p /var/www/html
-      sudo chown -R $USER:$USER /var/www/html
-      cd /var/www/html
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY }} # Fixed: Changed from EC2_SSH_KEY to EC2_KEY for consistency
+          script: |
+            # Create directory and set permissions
+            sudo mkdir -p /var/www/html
+            sudo chown -R $USER:$USER /var/www/html
+            cd /var/www/html
 
-      if [ -d .git ]; then
-        git reset --hard
-        git clean -fd
-        git pull origin main
-      else
-        sudo rm -rf /var/www/html/{*,.*} 2> /dev/null || true
-        git clone https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} .
-        git checkout main
-      fi
+            # Handle git repository
+            if [ -d .git ]; then
+              git reset --hard
+              git clean -fd
+              git pull origin main
+            else
+              sudo rm -rf /var/www/html/{*,.*} 2> /dev/null || true
+              git clone https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} .
+              git checkout main
+            fi
 
-      mkdir -p storage bootstrap/cache
+            # Create Laravel directories
+            mkdir -p storage bootstrap/cache
+            chmod -R 775 storage
+            chmod -R 775 bootstrap/cache
 
-      chmod -R 775 storage
-      chmod -R 775 bootstrap/cache
+            # Install Docker Compose if missing
+            if ! command -v docker-compose &> /dev/null; then
+              sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+              sudo chmod +x /usr/local/bin/docker-compose
+            fi
 
-      if ! command -v docker-compose &> /dev/null; then
-        sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-        sudo chmod +x /usr/local/bin/docker-compose
-      fi
+            # Docker operations
+            docker-compose down || true
+            docker-compose up -d --build
 
-      docker-compose down || true
+            # Wait for containers to be ready
+            sleep 10
 
-      docker-compose up -d --build
-
-      docker-compose exec server php artisan migrate --force
+            # Run migrations
+            docker-compose exec server php artisan migrate --force

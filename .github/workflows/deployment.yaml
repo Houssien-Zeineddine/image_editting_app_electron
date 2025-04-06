@@ -1,58 +1,79 @@
-name: Deploy Laravel Backend (Dockerized) to EC2
+name: Deploy Laravel to EC2
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
 
 jobs:
   deploy:
-    name: Dockerize and Deploy to EC2
+    name: Deploy to EC2
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repo
-        uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Set up SSH Access
+      - name: Configure SSH
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.EC2_KEY }}" > ~/.ssh/id_rsa
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+          echo "${{ secrets.EC2_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
 
-      - name: Set up Docker
-        run: |
-          sudo apt-get update
-          sudo apt-get install docker.io docker-compose git -y
-          sudo systemctl start docker
-          sudo systemctl enable docker
-
-      - name: Deploy Dockerized Laravel Backend to EC2
-        uses: appleboy/ssh-action@v1.0.0
+      - name: Install Docker on EC2
+        uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_KEY }}
-          port: 22
+          key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            set -e
+            sudo apt-get remove -y docker docker-engine docker.io containerd runc || true
+            sudo apt-get update
 
-            if [ ! -d /var/www/html ]; then
-              git clone https://github.com/${{ github.repository }} /var/www/html
-            fi
+            sudo apt-get install -y ca-certificates curl gnupg
 
+            sudo install -m 0755 -d /etc/apt/keyrings
+            curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+            sudo chmod a+r /etc/apt/keyrings/docker.gpg
+
+            echo \
+              "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+              $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+              sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+            sudo apt-get update
+            sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+            sudo systemctl enable --now docker
+
+      - name: Deploy Laravel
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            sudo mkdir -p /var/www/html
+            sudo chown -R $USER:$USER /var/www/html
             cd /var/www/html
 
-            git pull origin main
+            if [ -d .git ]; then
+              git pull origin main
+            else
+              git clone https://github.com/${{ github.repository }} .
+              git checkout main
+            fi
 
-            # Ensure Docker Compose is installed
+            sudo chmod -R 775 /var/www/html/storage
+            sudo chmod -R 775 /var/www/html/bootstrap/cache
+
             if ! command -v docker-compose &> /dev/null; then
-              echo "docker-compose could not be found. Installing it..."
-              sudo curl -L "https://github.com/docker/compose/releases/download/$(curl -s https://api.github.com/repos/docker/compose/releases/latest | jq -r .tag_name)/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+              sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
               sudo chmod +x /usr/local/bin/docker-compose
             fi
 
-            docker-compose down
+            docker-compose down || true
 
             docker-compose up -d --build
+
+            docker-compose exec server php artisan migrate --force

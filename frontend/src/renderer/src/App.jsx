@@ -1,34 +1,47 @@
-import Versions from './components/Versions'
-import electronLogo from './assets/electron.svg'
+import React from 'react'
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom'
+import { AuthProvider } from './components/context/AuthContext'
+import Navbar from './components/Navbar'
+import Login from './components/Auth/Login'
+import Register from './components/Auth/Register'
+import ImageGallery from './components/ImageGallery'
+import ImageUpload from './components/ImageUpload'
+import PrivateRoute from './components/PrivateRoute'
+import './style.css'
 
 function App() {
-  const ipcHandle = () => window.electron.ipcRenderer.send('ping')
-
   return (
-    <>
-      <img alt="logo" className="logo" src={electronLogo} />
-      <div className="creator">Powered by electron-vite</div>
-      <div className="text">
-        Build an Electron app with <span className="react">React</span>
-      </div>
-      <p className="tip">
-        Please try pressing <code>F12</code> to open the devTool
-      </p>
-      <div className="actions">
-        <div className="action">
-          <a href="https://electron-vite.org/" target="_blank" rel="noreferrer">
-            Documentation
-          </a>
+    <Router>
+      <AuthProvider>
+        <div className="app">
+          <Navbar />
+          <div className="container">
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/" element={<ImageGallery />} />
+              <Route path="/upload" element={<ImageUpload />} />
+              {/* <Route
+                path="/"
+                element={
+                  <PrivateRoute>
+                    <ImageGallery />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/upload"
+                element={
+                  <PrivateRoute>
+                    <ImageUpload />
+                  </PrivateRoute>
+                }
+              /> */}
+            </Routes>
+          </div>
         </div>
-        <div className="action">
-          <a target="_blank" rel="noreferrer" onClick={ipcHandle}>
-            Send IPC
-          </a>
-        </div>
-      </div>
-      <Versions></Versions>
-    </>
+      </AuthProvider>
+    </Router>
   )
 }
-
 export default App

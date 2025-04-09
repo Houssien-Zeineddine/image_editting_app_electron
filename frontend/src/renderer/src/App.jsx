@@ -17,9 +17,9 @@ function App() {
           <Navbar />
           <div className="container">
             <Routes>
-              <Route path="/login" element={<Login />} />
+              <Route path="/" element={<Login />} />
               <Route path="/register" element={<Register />} />
-              <Route path="/" element={<ImageGallery />} />
+              <Route path="/imagegallery" element={<ImageGallery />} />
               <Route path="/upload" element={<ImageUpload />} />
               {/* <Route
                 path="/"

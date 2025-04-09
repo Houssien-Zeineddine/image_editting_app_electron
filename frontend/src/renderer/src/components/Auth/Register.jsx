@@ -1,6 +1,6 @@
 import React, { useState, useContext } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { AuthContext } from '../context/AuthContext'
+import { Link, useNavigate } from 'react-router-dom'
+import axios from 'axios'
 
 const Register = () => {
   const [userData, setUserData] = useState({
@@ -10,9 +10,9 @@ const Register = () => {
     password_confirmation: ''
   })
   const [error, setError] = useState('')
-  const { register } = useContext(AuthContext)
   const navigate = useNavigate()
 
+  //setting the data entered  by user
   const handleChange = (e) => {
     setUserData({
       ...userData,
@@ -27,7 +27,12 @@ const Register = () => {
       return
     }
     try {
-      await register(userData)
+      const response = await axios.post('http://127.0.0.1:8000/api/v0.1/guest/register', userData, {
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json'
+        }
+      })
     } catch (err) {
       setError('Registration failed')
     }
@@ -40,17 +45,11 @@ const Register = () => {
       <form onSubmit={handleSubmit}>
         <div className="form-group">
           <label>Name</label>
-          <input type="text" name="name" value={userData.name} onChange={handleChange} required />
+          <input type="text" name="name" value={userData.name} onChange={handleChange} />
         </div>
         <div className="form-group">
           <label>Email</label>
-          <input
-            type="email"
-            name="email"
-            value={userData.email}
-            onChange={handleChange}
-            required
-          />
+          <input type="email" name="email" value={userData.email} onChange={handleChange} />
         </div>
         <div className="form-group">
           <label>Password</label>
@@ -59,7 +58,6 @@ const Register = () => {
             name="password"
             value={userData.password}
             onChange={handleChange}
-            required
           />
         </div>
         <div className="form-group">
@@ -69,7 +67,6 @@ const Register = () => {
             name="password_confirmation"
             value={userData.password_confirmation}
             onChange={handleChange}
-            required
           />
         </div>
         <button type="submit" className="btn">
@@ -77,7 +74,7 @@ const Register = () => {
         </button>
       </form>
       <p>
-        Already have an account? <a href="/login">Login</a>
+        Already have an account? <Link to="/">Login</Link>
       </p>
     </div>
   )

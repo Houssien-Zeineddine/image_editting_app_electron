@@ -9,19 +9,19 @@ const ImageGallery = () => {
   const [error, setError] = useState('')
   const { user } = useContext(AuthContext)
 
-  useEffect(() => {
-    const fetchImages = async () => {
-      try {
-        const data = await getImages(user.id)
-        setImages(data)
-      } catch (err) {
-        setError('Failed to fetch images')
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchImages()
-  }, [user.id])
+  // useEffect(() => {
+  //   const fetchImages = async () => {
+  //     try {
+  //       const data = await getImages(user.id)
+  //       setImages(data)
+  //     } catch (err) {
+  //       setError('Failed to fetch images')
+  //     } finally {
+  //       setLoading(false)
+  //     }
+  //   }
+  //   fetchImages()
+  // }, [user.id])
 
   const handleDelete = async (imageId) => {
     if (window.confirm('Are you sure you want to delete this image?')) {

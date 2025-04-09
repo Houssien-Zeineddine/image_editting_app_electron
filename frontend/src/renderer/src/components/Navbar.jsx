@@ -14,12 +14,12 @@ const Navbar = () => {
   return (
     <nav className="navbar">
       <div className="navbar-brand">
-        <Link to="/">Image Manager</Link>
+        <Link to="/imagegallery">Image Manager</Link>
       </div>
       <div className="navbar-menu">
         {user ? (
           <>
-            <Link to="/" className="navbar-item">
+            <Link to="/imagegallery" className="navbar-item">
               Gallery
             </Link>
             <Link to="/upload" className="navbar-item">
@@ -31,7 +31,7 @@ const Navbar = () => {
           </>
         ) : (
           <>
-            <Link to="/login" className="navbar-item">
+            <Link to="/" className="navbar-item">
               Login
             </Link>
             <Link to="/register" className="navbar-item">

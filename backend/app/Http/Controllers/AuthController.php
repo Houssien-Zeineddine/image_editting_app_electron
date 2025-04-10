@@ -5,14 +5,17 @@ namespace App\Http\Controllers;
 use App\Models\LoginLog;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
+// use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Validation\ValidationException;
 use App\Http\Requests\CreateDataRequest;
+use App\Services\AuthService;
+// use App\Traits\ResponseTrait;
 
 class AuthController extends Controller
 {
+    // use ResponseTrait;
     public function register(Request $request)
     { 
         // // Check if the email is already registered
@@ -22,16 +25,21 @@ class AuthController extends Controller
         //     ], 422);
         // }
 
-        $user = new User; 
-        $user->name = $request->name;
-        $user->email = $request->email;
-        $user->password = bcrypt($request->password);
-        $user->save();
+        // $user = new User; 
+        // $user->name = $request->name;
+        // $user->email = $request->email;
+        // $user->password = bcrypt($request->password);
+        // $user->save();
 
-        return response()->json([
-            'message' => 'User registered successfully',
-            'user' => $user,
-        ], 201);
+        $registerUser = new AuthService();
+        $user = $registerUser->registerUser($request);
+
+        return $this->successResponse($user);
+
+        // return response()->json([
+        //     'message' => 'User registered successfully',
+        //     'user' => $user,
+        // ], 201);
     }
 
     public function login(Request $request)
@@ -41,22 +49,24 @@ class AuthController extends Controller
         //     'password' => 'required|string',
         // ]);
 
-        if (!Auth::attempt($request->only('email', 'password'))) {
+        /* if (!Auth::attempt($request->only('email', 'password'))) {
             throw ValidationException::withMessages([
                 'email' => ['The provided credentials are incorrect.'],
             ]);
         }
 
         $user = $request->user();
-        $token = $user->createToken('auth_token')->plainTextToken;
+        $token = $user->createToken('auth_token')->plainTextToken; */
 
         // Log login activity
         // $this->logLoginActivity($user, $request);
 
+        $loginUsers = new AuthService();
+
+        $user = $loginUsers->loginUser($request);
+
         return response()->json([
-            'access_token' => $token,
-            'token_type' => 'Bearer',
-            'user' => $user,
+            $user
         ]);
     }
 

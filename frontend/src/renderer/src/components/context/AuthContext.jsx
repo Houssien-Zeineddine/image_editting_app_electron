@@ -1,11 +1,11 @@
 import React, { createContext, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import {
+/* import {
   login as authLogin,
   register as authRegister,
   logout as authLogout,
   checkAuth
-} from '../services/auth'
+} from '../services/auth' */
 
 export const AuthContext = createContext()
 

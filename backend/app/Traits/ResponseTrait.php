@@ -8,9 +8,9 @@ use Illuminate\Http\Exceptions\HttpResponseException;
 trait ResponseTrait
 {
     //traits are methods that are accessible in all classes
-    public function success($data, $code = 200)
+    public function successResponse($data, $code = 200)
     {
-        return successResponse()->json([
+        return response()->json([
             'status' => 'success',
             'payload' => $data,
         ], $code);

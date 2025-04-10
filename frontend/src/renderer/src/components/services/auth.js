@@ -1,22 +1,22 @@
-const API_URL = 'http://localhost:8000/api';
+/* const API_URL = 'http://localhost:8000/api';
 
-export const login = async (credentials) => {
-  const response = await fetch(`${API_URL}/login`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-    },
-    body: JSON.stringify(credentials),
-    credentials: 'include',
-  });
+// export const login = async (credentials) => {
+//   const response = await fetch(`${API_URL}/login`, {
+//     method: 'POST',
+//     headers: {
+//       'Content-Type': 'application/json',
+//       'Accept': 'application/json',
+//     },
+//     body: JSON.stringify(credentials),
+//     credentials: 'include',
+//   });
 
-  if (!response.ok) {
-    throw new Error('Login failed');
-  }
+//   if (!response.ok) {
+//     throw new Error('Login failed');
+//   }
 
-  return await response.json();
-};
+//   return await response.json();
+// };
 
 export const register = async (userData) => {
   const response = await fetch(`${API_URL}/register`, {
@@ -56,4 +56,4 @@ export const checkAuth = async () => {
   }
 
   return await response.json();
-};
+}; */

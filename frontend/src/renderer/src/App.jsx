@@ -6,12 +6,13 @@ import Login from './components/Auth/Login'
 import Register from './components/Auth/Register'
 import ImageGallery from './components/ImageGallery'
 import ImageUpload from './components/ImageUpload'
-import PrivateRoute from './components/PrivateRoute'
+//import PrivateRoute from './components/PrivateRoute'
 import './style.css'
 
 function App() {
   return (
     <Router>
+      {/* AuthProvider wraps the entire app making authentication states like login, signip etc.. available to all components*/}
       <AuthProvider>
         <div className="app">
           <Navbar />

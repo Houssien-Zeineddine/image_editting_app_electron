@@ -2,26 +2,27 @@ import React, { useState, useEffect, useContext } from 'react'
 import { getImages, deleteImage } from './services/images'
 import { Link } from 'react-router-dom'
 import { AuthContext } from './context/AuthContext'
+import axios from 'axios'
 
 const ImageGallery = () => {
   const [images, setImages] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const { user } = useContext(AuthContext)
 
-  // useEffect(() => {
-  //   const fetchImages = async () => {
-  //     try {
-  //       const data = await getImages(user.id)
-  //       setImages(data)
-  //     } catch (err) {
-  //       setError('Failed to fetch images')
-  //     } finally {
-  //       setLoading(false)
-  //     }
-  //   }
-  //   fetchImages()
-  // }, [user.id])
+  useEffect(() => {
+    const fetchImages = async () => {
+      try {
+        const response = await axios.get('http://127.0.0.1:8000/api/v0.1/guest/login')
+        setImages(response.data.images)
+      } catch (err) {
+        setError('Failed to fetch images')
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchImages()
+  }, [user.id])
 
   const handleDelete = async (imageId) => {
     if (window.confirm('Are you sure you want to delete this image?')) {

@@ -1,7 +1,7 @@
 import React, { useState, useContext } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 //import { AuthContext } from '../context/AuthContext'
-import axios from 'axios'
+import axiosBaseUrl from '../utils/axios.js'
 
 const Login = () => {
   const [credentials, setCredentials] = useState({
@@ -21,16 +21,15 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    try {
-      const response = await axios.post('http://127.0.0.1:8000/api/v0.1/guest/login', credentials, {
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json'
-        }
-      })
 
-      if (response.data.access_token) {
-        localStorage.setItem('access_token', response.data.access_token)
+    try {
+      const response = await axiosBaseUrl.post('/guest/login', credentials)
+
+      console.log(response)
+      if (response.data.error) {
+        setError(response.data.user.error)
+      } else {
+        localStorage.setItem('access_token', response.data.user.access_token)
         navigate('/imagegallery')
       }
     } catch (err) {

@@ -65,9 +65,15 @@ class AuthController extends Controller
 
         $user = $loginUsers->loginUser($request);
 
+        //below iam returning the user object inside an array that is why it was not accessible on the frontend
+        // return response()->json([
+        //     $user
+        // ]);
+
         return response()->json([
-            $user
-        ]);
+            'message' => 'Login successful',
+            'user' => $user,
+        ], 200);
     }
 
     public function logout(Request $request)

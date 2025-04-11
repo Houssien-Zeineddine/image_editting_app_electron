@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
 
 class AuthService
 {
@@ -26,15 +27,15 @@ class AuthService
 
     public function loginUser (Request $request)
     {
-        if (!Auth::attempt($request->only('email', 'password'))) {
-            throw ValidationException::withMessages([
-                'email' => ['The provided credentials are incorrect.'],
+        if (!Auth::attempt($request->only('email', 'password'))) { //auth::attempt is a method of the Auth facade that checks if the user exists in the database and if the password is correct
+            throw ValidationException::withMessages([ 
+                'email' => ['The provided credentials are incorrect.'], //if throw validation exception, the function will stop executing and return a 422 error
             ]);
         }
 
-        $user = $request->user();
+        $user = Auth::user();
         $token = $user->createToken('auth_token')->plainTextToken; //createtoken is a method of the User model that saves the token in the database automatically
-        $user->token = $token;
+        $user->access_token = $token;
 
         return $user;
     }

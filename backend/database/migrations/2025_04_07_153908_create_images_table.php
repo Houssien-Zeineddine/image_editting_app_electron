@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('images', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade'); //constrained is where the table where the foreign id is located
+            $table->foreignId('user_id')->constrained()->onDelete('cascade'); //constrained is where the table where the foreign id is located, cascade means that if the user is deleted, all images related to that user will be deleted as well
             $table->string('name');
             $table->string('path');
             $table->text('edits')->nullable();

@@ -1,6 +1,6 @@
 import React, { useState, useContext } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import axiosBaseUrl from '../utils/axios'
+import { AuthContext } from '../context/AuthContext'
 
 const Register = () => {
   const [userData, setUserData] = useState({
@@ -9,8 +9,9 @@ const Register = () => {
     password: '',
     password_confirmation: ''
   })
-  const [error, setError] = useState('')
-  const navigate = useNavigate()
+  // const [error, setError] = useState('')
+  // const navigate = useNavigate()
+  const { registerCheck, error } = useContext(AuthContext)
 
   //setting the data entered  by user
   const handleChange = (e) => {
@@ -22,21 +23,16 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (userData.password !== userData.password_confirmation) {
-      setError('Passwords do not match')
-      return
-    }
-    try {
-      const response = await axiosBaseUrl.get('/guest/register', userData)
-      // const response1 = await axios.post('http://127.0.0.1:8000/api/v0.1/guest/register', userData, {
-      // headers: {
-      //   Accept: 'application/json',
-      //   'Content-Type': 'application/json'
-      // }
-      // })
-    } catch (err) {
-      setError('Registration failed')
-    }
+    registerCheck(userData)
+    // if (userData.password !== userData.password_confirmation) {
+    //   setError('Passwords do not match')
+    //   return
+    // }
+    // try {
+    //   const response = await axiosBaseUrl.post('/guest/register', userData)
+    // } catch (err) {
+    //   setError('Registration failed')
+    // }
   }
 
   return (
@@ -50,7 +46,7 @@ const Register = () => {
         </div>
         <div className="form-group">
           <label>Email</label>
-          <input type="email" name="email" value={userData.email} onChange={handleChange} />
+          <input type="text" name="email" value={userData.email} onChange={handleChange} />
         </div>
         <div className="form-group">
           <label>Password</label>

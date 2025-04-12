@@ -1,16 +1,14 @@
 import React, { useState, useContext } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-//import { AuthContext } from '../context/AuthContext'
-import axiosBaseUrl from '../utils/axios.js'
+import { AuthContext } from '../context/AuthContext'
 
 const Login = () => {
   const [credentials, setCredentials] = useState({
     email: '',
     password: ''
   })
-  const [error, setError] = useState('')
-  //const { login } = useContext(AuthContext)
-  const navigate = useNavigate()
+  //const [error, setError] = useState('')
+  const { login, error } = useContext(AuthContext)
 
   const handleChange = (e) => {
     setCredentials({
@@ -21,20 +19,20 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    login(credentials)
+    // try {
+    //   const response = await axiosBaseUrl.post('/guest/login', credentials)
 
-    try {
-      const response = await axiosBaseUrl.post('/guest/login', credentials)
-
-      console.log(response)
-      if (response.data.error) {
-        setError(response.data.user.error)
-      } else {
-        localStorage.setItem('access_token', response.data.user.access_token)
-        navigate('/imagegallery')
-      }
-    } catch (err) {
-      setError('Invalid credentials')
-    }
+    //   console.log(response)
+    //   if (response.data.error) {
+    //     setError(response.data.user.error)
+    //   } else {
+    //     localStorage.setItem('access_token', response.data.user.access_token)
+    //     navigate('/imagegallery')
+    //   }
+    // } catch (err) {
+    //   setError('Invalid credentials')
+    // }
   }
 
   return (
@@ -44,7 +42,7 @@ const Login = () => {
       <form onSubmit={handleSubmit}>
         <div className="form-group">
           <label>Email</label>
-          <input type="email" name="email" value={credentials.email} onChange={handleChange} />
+          <input type="text" name="email" value={credentials.email} onChange={handleChange} />
         </div>
         <div className="form-group">
           <label>Password</label>

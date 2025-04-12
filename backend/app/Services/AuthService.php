@@ -7,21 +7,20 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
-use App\Traits\ResponseTrait;
+use App\Http\Controllers\Controller;
 
-class AuthService
+class AuthService extends Controller
 {
-    use ResponseTrait;
     /**
      * Create a new class instance.
      */
 
     public function registerUser (Request $request) {
         if ($request->password !== $request->password_confirmation) {
-            // throw ValidationException::withMessages([
-            //     'password' => ['The provided password does not match.'],
-            // ]);
-            return $this->errorResponse("Passwords don't match", 422);
+            throw ValidationException::withMessages([
+                'password' => ['The provided password does not match.'],
+            ]);
+            // return $this->errorResponse("Passwords don't match", 422);
         }
 
         $user = new User; 
@@ -37,14 +36,22 @@ class AuthService
     public function loginUser (Request $request)
     {
         if (!Auth::attempt($request->only('email', 'password'))) { //auth::attempt is a method of the Auth facade that checks if the user exists in the database and if the password is correct
-            throw ValidationException::withMessages([ 
-                'email' => ['The provided credentials are incorrect.'], //if throw validation exception, the function will stop executing and return a 422 error
-            ]);
+            // throw ValidationException::withMessages([ 
+            //     'email' => ['The provided credentials are incorrect.'], //if throw validation exception, the function will stop executing and return a 422 error
+            // ]);
+            return $this->errorResponse('Invalid credentials', 422);
         }
 
         $user = Auth::user();
         $token = $user->createToken('auth_token')->plainTextToken; //createtoken is a method of the User model that saves the token in the database automatically
         $user->access_token = $token;
+
+        return $user;
+    }
+
+    public function logout ($request) {
+        $user = Auth::user();
+        $user->tokens()->delete();
 
         return $user;
     }

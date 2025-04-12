@@ -11,21 +11,23 @@ export const AuthProvider = ({ children }) => {
   const navigate = useNavigate()
 
   const login = async (credentials) => {
-    try {
-      const response = await axiosBaseUrl.post('/guest/login', credentials)
+    // try {
+    const response = await axiosBaseUrl.post('/guest/login', credentials)
 
-      console.log(response)
+    // console.log(response.data)
 
-      if (response.data.error) {
-        setError(response.data.user.error)
-      } else {
-        localStorage.setItem('access_token', response.data.user.access_token)
-        setUser(response.data.user)
-        // navigate('/imagegallery')
-      }
-    } catch {
-      setError('Invalid credentials')
+    if (!response.data.status == 'success') {
+      setError(response.data.payload.original.payload)
+      // console.log('Error FROM REACT:', response.data.payload)
+    } else {
+      localStorage.setItem('access_token', response.data.payload.access_token)
+      setUser(response.data.payload)
+      // console.log('User FROM REACT:', response.data.payload)
+      navigate('/imagegallery')
     }
+    // } catch {
+    //   setError('Invalid credentials from react')
+    // }
   }
 
   const registerCheck = async (userData) => {
@@ -45,9 +47,16 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
-  const logout = () => {
+  const logout = async (user) => {
+    const token = localStorage.getItem('access_token')
+    const response = await axiosBaseUrl.post('/user/logout', user, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
     localStorage.removeItem('access_token')
     setUser(null)
+    console.log(response.data)
     navigate('/')
   }
   // const [user, setUser] = useState(null)

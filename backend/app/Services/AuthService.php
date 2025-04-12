@@ -7,14 +7,23 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use App\Traits\ResponseTrait;
 
 class AuthService
 {
+    use ResponseTrait;
     /**
      * Create a new class instance.
      */
 
     public function registerUser (Request $request) {
+        if ($request->password !== $request->password_confirmation) {
+            // throw ValidationException::withMessages([
+            //     'password' => ['The provided password does not match.'],
+            // ]);
+            return $this->errorResponse("Passwords don't match", 422);
+        }
+
         $user = new User; 
         $user->name = $request->name;
         $user->email = $request->email;

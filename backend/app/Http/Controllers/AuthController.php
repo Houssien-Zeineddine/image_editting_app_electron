@@ -34,7 +34,11 @@ class AuthController extends Controller
         $registerUser = new AuthService();
         $user = $registerUser->registerUser($request);
 
-        return $this->successResponse($user);
+        if ($user){
+            return $this->successResponse($user);
+        } else {
+            return $this->errorResponse('Registeration failed', 422); //422 means unprocessable entity which means the request was well formed but the server was unable to process it
+        }
 
         // return response()->json([
         //     'message' => 'User registered successfully',

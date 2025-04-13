@@ -19,8 +19,10 @@ const ImageUpload = () => {
   const handleUpload = async () => {
     if (!file || !window.electronAPI) return
 
+    console.log('in handelUpload before calling savImage')
+
     try {
-      setIsUploading(true)
+      //setIsUploading(true)
       const arrayBuffer = await file.arrayBuffer()
       const fileName = `${Date.now()}-${file.name}`
 

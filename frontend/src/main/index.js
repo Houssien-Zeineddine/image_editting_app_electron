@@ -77,25 +77,27 @@ ipcMain.handle('load-images', async () => {
     const imagesPath = path.join(userDataPath, 'images');
 
     if (!fs.existsSync(imagesPath)) return [];
-    
-    // Check if imagesPath is actually a directory
     const stats = fs.statSync(imagesPath);
     if (!stats.isDirectory()) return [];
 
     const files = fs.readdirSync(imagesPath);
+    console.log('All files in images directory:', files);
 
-    return files
-      .filter(file => {
-        const ext = path.extname(file).toLowerCase();
-        return ['.jpg', '.jpeg', '.png'].includes(ext);
-      })
-      .map(file => ({
-        name: file,
-        path: path.join(imagesPath, file)
-      }));
+    const filteredFiles = files.filter(file => {
+      if (!file || typeof file !== 'string') return false;
+      const ext = path.extname(file);
+      // Ensure ext is a string and convert to lowercase safely
+      return ext && typeof ext === 'string' && ['.jpg', '.jpeg', '.png'].includes(ext.toLowerCase());
+    })
+
+    console.log('Filtered files:', filteredFiles);
+    return filteredFiles.map(file => ({
+      name: file,
+      path: path.join(imagesPath, file)
+    }));
   } catch (error) {
     console.error('Error loading images:', error);
-    return []; // Return empty array on error
+    return [];
   }
 });
 

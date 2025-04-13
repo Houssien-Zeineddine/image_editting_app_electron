@@ -1,6 +1,5 @@
 import React, { useState, useContext } from 'react'
 import { AuthContext } from './context/AuthContext'
-import { uploadImage } from './services/images'
 
 const ImageUpload = () => {
   const [file, setFile] = useState(null)
@@ -9,7 +8,7 @@ const ImageUpload = () => {
   const [error, setError] = useState('')
   const { user } = useContext(AuthContext)
 
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     const selectedFile = e.target.files[0]
     if (selectedFile) {
       setFile(selectedFile)
@@ -17,50 +16,43 @@ const ImageUpload = () => {
     }
   }
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    if (!file) {
-      setError('Please select a file')
-      return
-    }
-
-    setIsUploading(true)
-    setError('')
+  const handleUpload = async () => {
+    if (!file || !window.electronAPI) return
 
     try {
-      const formData = new FormData()
-      formData.append('image', file)
-      formData.append('user_id', user.id)
+      setIsUploading(true)
+      const arrayBuffer = await file.arrayBuffer()
+      const fileName = `${Date.now()}-${file.name}`
 
-      await uploadImage(formData)
+      // Use the exposed electronAPI instead of direct ipcRenderer
+      await window.electronAPI.saveImage({
+        fileName,
+        buffer: arrayBuffer
+      })
+
       setFile(null)
       setPreview(null)
       alert('Image uploaded successfully!')
-    } catch (err) {
-      setError('Failed to upload image')
+    } catch (error) {
+      setError(`Upload failed: ${error.message}`)
     } finally {
       setIsUploading(false)
     }
   }
 
   return (
-    <div className="image-upload">
+    <div className="upload-container">
       <h2>Upload Image</h2>
-      {error && <div className="error">{error}</div>}
-      <form onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label>Select Image</label>
-          <input type="file" accept="image/*" onChange={handleFileChange} required />
+      <input type="file" onChange={handleFileChange} accept="image/*" disabled={isUploading} />
+      {preview && (
+        <div className="preview">
+          <img src={preview} alt="Preview" />
         </div>
-        {preview && (
-          <div className="preview">
-            <img src={preview} alt="Preview" style={{ maxWidth: '100%', maxHeight: '300px' }} />
-          </div>
-        )}
-        <button type="submit" disabled={isUploading} className="btn">
-          {isUploading ? 'Uploading...' : 'Upload'}
-        </button>
-      </form>
+      )}
+      <button onClick={handleUpload} disabled={!file || isUploading} aria-busy={isUploading}>
+        {isUploading ? 'Uploading...' : 'Upload'}
+      </button>
+      {error && <div className="error-message">{error}</div>}
     </div>
   )
 }

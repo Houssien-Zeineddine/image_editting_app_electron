@@ -2,6 +2,8 @@ import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import fs from 'fs'
+import path from 'path'
 
 function createWindow() {
   // Create the browser window.
@@ -13,7 +15,9 @@ function createWindow() {
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
-      sandbox: false
+      sandbox: false,
+      nodeIntegration: true,
+      contextIsolation: true
     }
   })
 
@@ -52,7 +56,62 @@ app.whenReady().then(() => {
   })
 
   // IPC test
-  ipcMain.on('ping', () => console.log('pong'))
+  //ipcMain.on('ping', () => console.log('pong'))
+
+  ipcMain.handle('save-image', async (_, { fileName, buffer }) => {
+  const userDataPath = app.getPath('userData')
+  const imagesPath = path.join(userDataPath, 'images')
+  
+  if (!fs.existsSync(imagesPath)) {
+    fs.mkdirSync(imagesPath, { recursive: true })
+  }
+  
+  const filePath = path.join(imagesPath, fileName)
+  fs.writeFileSync(filePath, Buffer.from(buffer))
+  return filePath
+})
+
+ipcMain.handle('load-images', async () => {
+  try {
+    const userDataPath = app.getPath('userData');
+    const imagesPath = path.join(userDataPath, 'images');
+
+    if (!fs.existsSync(imagesPath)) return [];
+    
+    // Check if imagesPath is actually a directory
+    const stats = fs.statSync(imagesPath);
+    if (!stats.isDirectory()) return [];
+
+    const files = fs.readdirSync(imagesPath);
+
+    return files
+      .filter(file => {
+        const ext = path.extname(file).toLowerCase();
+        return ['.jpg', '.jpeg', '.png'].includes(ext);
+      })
+      .map(file => ({
+        name: file,
+        path: path.join(imagesPath, file)
+      }));
+  } catch (error) {
+    console.error('Error loading images:', error);
+    return []; // Return empty array on error
+  }
+});
+
+ipcMain.handle('delete-image', async (_, fileName) => {
+  const userDataPath = app.getPath('userData')
+  const filePath = path.join(userDataPath, 'images', fileName)
+  if (fs.existsSync(filePath)) {
+    fs.unlinkSync(filePath)
+    return true
+  }
+  return false
+})
+
+ipcMain.handle('get-app-path', () => {
+  return app.getPath('userData')
+})
 
   createWindow()
 

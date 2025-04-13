@@ -19,8 +19,8 @@ trait ResponseTrait
     public function errorResponse($data, $code)
     {
         return response()->json([
-            'status' => false,
-            'error' => 'error',
+            'status' => 'error',
+            'payload' => $data,
         ], $code);
     }
 

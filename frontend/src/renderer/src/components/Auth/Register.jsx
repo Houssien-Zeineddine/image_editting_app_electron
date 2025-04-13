@@ -1,6 +1,7 @@
 import React, { useState, useContext } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { AuthContext } from '../context/AuthContext'
+import axiosBaseUrl from '../utils/axios'
 
 const Register = () => {
   const [userData, setUserData] = useState({
@@ -9,9 +10,8 @@ const Register = () => {
     password: '',
     password_confirmation: ''
   })
-  // const [error, setError] = useState('')
-  // const navigate = useNavigate()
-  const { registerCheck, error } = useContext(AuthContext)
+
+  const { error } = useContext(AuthContext)
 
   //setting the data entered  by user
   const handleChange = (e) => {
@@ -23,16 +23,19 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    registerCheck(userData)
-    // if (userData.password !== userData.password_confirmation) {
-    //   setError('Passwords do not match')
-    //   return
-    // }
-    // try {
-    //   const response = await axiosBaseUrl.post('/guest/register', userData)
-    // } catch (err) {
-    //   setError('Registration failed')
-    // }
+    if (userData.password !== userData.password_confirmation) {
+      setError('Passwords do not match')
+      return
+    }
+
+    const navigate = useNavigate()
+    try {
+      const response = await axiosBaseUrl.post('guest/register', userData)
+      navigate('/')
+      console.log(response.data)
+    } catch (err) {
+      setError('Error occurred during registration')
+    }
   }
 
   return (

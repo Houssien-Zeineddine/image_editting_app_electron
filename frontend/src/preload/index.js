@@ -1,4 +1,4 @@
-import { contextBridge } from 'electron'
+import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 
 // Custom APIs for renderer
@@ -11,6 +11,12 @@ if (process.contextIsolated) {
   try {
     contextBridge.exposeInMainWorld('electron', electronAPI)
     contextBridge.exposeInMainWorld('api', api)
+    contextBridge.exposeInMainWorld('electronAPI', {
+  saveImage: (data) => ipcRenderer.invoke('save-image', data),
+  loadImages: () => ipcRenderer.invoke('load-images'),
+  deleteImage: (fileName) => ipcRenderer.invoke('delete-image', fileName),
+  ping: () => ipcRenderer.invoke('ping')
+})
   } catch (error) {
     console.error(error)
   }

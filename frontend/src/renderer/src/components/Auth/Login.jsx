@@ -1,14 +1,16 @@
 import React, { useState, useContext } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { AuthContext } from '../context/AuthContext'
+import axiosBaseUrl from '../utils/axios'
 
 const Login = () => {
   const [credentials, setCredentials] = useState({
     email: '',
     password: ''
   })
-  //const [error, setError] = useState('')
-  const { login, error } = useContext(AuthContext)
+  const { setError, error, setUser } = useContext(AuthContext)
+  //setError('')
+  const navigate = useNavigate()
 
   const handleChange = (e) => {
     setCredentials({
@@ -19,20 +21,19 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    login(credentials)
-    // try {
-    //   const response = await axiosBaseUrl.post('/guest/login', credentials)
+    try {
+      const response = await axiosBaseUrl.post('/guest/login', credentials)
 
-    //   console.log(response)
-    //   if (response.data.error) {
-    //     setError(response.data.user.error)
-    //   } else {
-    //     localStorage.setItem('access_token', response.data.user.access_token)
-    //     navigate('/imagegallery')
-    //   }
-    // } catch (err) {
-    //   setError('Invalid credentials')
-    // }
+      if (!response.data.status == 'success') {
+        setError(response.data.payload.original.payload)
+      } else {
+        localStorage.setItem('access_token', response.data.payload.access_token)
+        setUser(response.data.payload)
+        navigate('/imagegallery')
+      }
+    } catch (err) {
+      setError('Invalid credentials')
+    }
   }
 
   return (

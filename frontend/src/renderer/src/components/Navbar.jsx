@@ -1,14 +1,20 @@
 import React, { useContext } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { AuthContext } from './context/AuthContext'
+import axiosBaseUrl from './utils/axios'
 
 const Navbar = () => {
-  const { user, logout } = useContext(AuthContext)
-  //const navigate = useNavigate()
+  const { user, setUser } = useContext(AuthContext)
+  const navigate = useNavigate()
 
-  const handleLogout = () => {
-    logout()
-    //navigate('/')
+  const handleLogout = async () => {
+    console.log('logout')
+    // const token = localStorage.getItem('access_token')
+    const response = await axiosBaseUrl.post('/user/logout', {})
+    localStorage.removeItem('access_token')
+    setUser(null)
+    console.log('logout:' + response.data)
+    navigate('/')
   }
 
   return (

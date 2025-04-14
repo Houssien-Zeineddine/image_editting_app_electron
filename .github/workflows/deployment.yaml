@@ -3,86 +3,123 @@ name: Deploy Laravel to EC2
 on:
   push:
     branches: [main]
+    paths:
+      - "backend/**"
+      - "docker-compose.yml"
+      - ".github/workflows/deploy.yml"
 
 jobs:
   deploy:
-    name: Deploy to EC2
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
-      - name: Configure SSH
+      - name: Install SSH key
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          known_hosts: ${{ secrets.KNOWN_HOSTS }}
+
+      - name: Copy files to EC2
         run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.EC2_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          echo "${{ secrets.EC2_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          scp -r backend docker-compose.yml ${{ secrets.SSH_USER }}@${{ secrets.EC2_HOST }}:/home/${{ secrets.SSH_USER }}/app
 
-      - name: Install Docker on EC2
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_KEY }} # Fixed: Consistent key secret name
-          script: |
-            sudo apt-get remove -y docker docker-engine docker.io containerd runc || true
-            sudo apt-get update
-            sudo apt-get install -y ca-certificates curl gnupg
-            sudo install -m 0755 -d /etc/apt/keyrings
-            curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-            sudo chmod a+r /etc/apt/keyrings/docker.gpg
-            echo \
-              "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
-              $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
-              sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-            sudo apt-get update
-            sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-            sudo systemctl enable --now docker
+      - name: Deploy on EC2
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+          cd /home/${{ secrets.SSH_USER }}/app
+          docker-compose down
+          docker-compose pull || true
+          docker-compose up -d --build
+          EOF
 
-      - name: Deploy Laravel
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_KEY }} # Fixed: Changed from EC2_SSH_KEY to EC2_KEY for consistency
-          script: |
-            sudo usermod -aG docker $USER 
-            newgrp docker
-            # Create directory and set permissions
-            sudo mkdir -p /var/www/html
-            sudo chown -R $USER:$USER /var/www/html
-            cd /var/www/html
+# name: Deploy Laravel to EC2
 
-            # Handle git repository
-            if [ -d .git ]; then
-              git reset --hard
-              git clean -fd
-              git pull origin main
-            else
-              sudo rm -rf /var/www/html/{*,.*} 2> /dev/null || true
-              git clone git@github.com:${{ github.repository }}.git .
-              git checkout main
-            fi
+# on:
+#   push:
+#     branches: [main]
 
-            # Create Laravel directories
-            mkdir -p storage bootstrap/cache
-            chmod -R 775 storage
-            chmod -R 775 bootstrap/cache
+# jobs:
+#   deploy:
+#     name: Deploy to EC2
+#     runs-on: ubuntu-latest
 
-            # Install Docker Compose if missing
-            if ! command -v docker-compose &> /dev/null; then
-              sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-              sudo chmod +x /usr/local/bin/docker-compose
-            fi
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v4
 
-            # Docker operations
-            docker-compose down || true
-            docker-compose up -d --build
+#       - name: Configure SSH
+#         run: |
+#           mkdir -p ~/.ssh
+#           echo "${{ secrets.EC2_KEY }}" > ~/.ssh/id_rsa
+#           chmod 600 ~/.ssh/id_rsa
+#           echo "${{ secrets.EC2_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
 
-            # Wait for containers to be ready
-            sleep 10
+#       - name: Install Docker on EC2
+#         uses: appleboy/ssh-action@v1
+#         with:
+#           host: ${{ secrets.EC2_HOST }}
+#           username: ${{ secrets.EC2_USER }}
+#           key: ${{ secrets.EC2_KEY }} # Fixed: Consistent key secret name
+#           script: |
+#             sudo apt-get remove -y docker docker-engine docker.io containerd runc || true
+#             sudo apt-get update
+#             sudo apt-get install -y ca-certificates curl gnupg
+#             sudo install -m 0755 -d /etc/apt/keyrings
+#             curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+#             sudo chmod a+r /etc/apt/keyrings/docker.gpg
+#             echo \
+#               "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+#               $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+#               sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+#             sudo apt-get update
+#             sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+#             sudo systemctl enable --now docker
 
-            # Run migrations
-            docker-compose exec server php artisan migrate --force
+#       - name: Deploy Laravel
+#         uses: appleboy/ssh-action@v1
+#         with:
+#           host: ${{ secrets.EC2_HOST }}
+#           username: ${{ secrets.EC2_USER }}
+#           key: ${{ secrets.EC2_KEY }} # Fixed: Changed from EC2_SSH_KEY to EC2_KEY for consistency
+#           script: |
+#             sudo usermod -aG docker $USER
+#             newgrp docker
+#             # Create directory and set permissions
+#             sudo mkdir -p /var/www/html
+#             sudo chown -R $USER:$USER /var/www/html
+#             cd /var/www/html
+
+#             # Handle git repository
+#             if [ -d .git ]; then
+#               git reset --hard
+#               git clean -fd
+#               git pull origin main
+#             else
+#               sudo rm -rf /var/www/html/{*,.*} 2> /dev/null || true
+#               git clone git@github.com:${{ github.repository }}.git .
+#               git checkout main
+#             fi
+
+#             # Create Laravel directories
+#             mkdir -p storage bootstrap/cache
+#             chmod -R 775 storage
+#             chmod -R 775 bootstrap/cache
+
+#             # Install Docker Compose if missing
+#             if ! command -v docker-compose &> /dev/null; then
+#               sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+#               sudo chmod +x /usr/local/bin/docker-compose
+#             fi
+
+#             # Docker operations
+#             docker-compose down || true
+#             docker-compose up -d --build
+
+#             # Wait for containers to be ready
+#             sleep 10
+
+#             # Run migrations
+#             docker-compose exec server php artisan migrate --force

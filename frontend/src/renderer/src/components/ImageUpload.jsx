@@ -48,7 +48,7 @@ const ImageUpload = () => {
       <input type="file" onChange={handleFileChange} accept="image/*" disabled={isUploading} />
       {preview && (
         <div className="preview">
-          <img src={preview} alt="Preview" />
+          <img src={preview} className="image-preview" alt="Preview" />
         </div>
       )}
       <button onClick={handleUpload} disabled={!file || isUploading} aria-busy={isUploading}>

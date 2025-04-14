@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import * as fabric from 'fabric'
 import ReactCrop from 'react-image-crop'
 import 'react-image-crop/dist/ReactCrop.css'
+//import { ipcRenderer } from 'electron'
 
 const ImageGallery = () => {
   const [images, setImages] = useState([])
@@ -9,10 +10,23 @@ const ImageGallery = () => {
   const [crop, setCrop] = useState({ aspect: 1 })
   const [canvas, setCanvas] = useState(null)
   const [editMode, setEditMode] = useState('crop')
+  const [appPath, setAppPath] = useState('')
 
   useEffect(() => {
     loadImages()
   }, [])
+
+  useEffect(() => {
+    if (window.electronAPI && window.electronAPI.getAppPath) {
+      window.electronAPI.getAppPath().then((path) => {
+        setAppPath(path)
+      })
+    }
+  }, [])
+
+  // useEffect(() => {
+  //   ipcRenderer.invoke('get-app-path').then(setAppPath)
+  // }, [])
 
   const loadImages = async () => {
     if (!window.electronAPI) return
@@ -87,8 +101,19 @@ const ImageGallery = () => {
       <h2>Image Gallery</h2>
       <div className="grid">
         {images.map((img, index) => (
+          //console.log('Image URL from imagegallery component:', `app:///${img.path}`),
           <div key={index} className="thumbnail">
-            <img src={`file://${img.path}`} alt={img.name} />
+            <img
+              src={`app://${img.path}`} // Changed from app:/// to app://
+              alt={img.name}
+              onError={(e) => {
+                console.error('Image load failed:', {
+                  src: e.target.src,
+                  storedPath: img.path,
+                  calculatedPath: appPath ? `${appPath}/${img.path}` : 'Unknown'
+                })
+              }}
+            />
             <div className="controls">
               <button onClick={() => setSelectedImage(img)}>Edit</button>
               <button onClick={() => handleDelete(img.name)}>Delete</button>
@@ -109,7 +134,7 @@ const ImageGallery = () => {
 
           {editMode === 'crop' ? (
             <ReactCrop
-              src={`file://${selectedImage.path}`}
+              src={`app://${selectedImage.path}`}
               crop={crop}
               onChange={(newCrop) => setCrop(newCrop)}
               onImageLoaded={handleCrop}
@@ -126,7 +151,7 @@ const ImageGallery = () => {
 const getCroppedImg = (image, crop) => {
   const canvas = document.createElement('canvas')
   const img = new Image()
-  img.src = `file://${image.path}`
+  img.src = `app://${image.path}`
 
   return new Promise((resolve) => {
     img.onload = () => {

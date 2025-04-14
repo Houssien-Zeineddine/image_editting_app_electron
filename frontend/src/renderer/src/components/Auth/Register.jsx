@@ -1,6 +1,7 @@
 import React, { useState, useContext } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import axios from 'axios'
+import { AuthContext } from '../context/AuthContext'
+import axiosBaseUrl from '../utils/axios'
 
 const Register = () => {
   const [userData, setUserData] = useState({
@@ -9,8 +10,8 @@ const Register = () => {
     password: '',
     password_confirmation: ''
   })
-  const [error, setError] = useState('')
-  const navigate = useNavigate()
+
+  const { error } = useContext(AuthContext)
 
   //setting the data entered  by user
   const handleChange = (e) => {
@@ -26,15 +27,14 @@ const Register = () => {
       setError('Passwords do not match')
       return
     }
+
+    const navigate = useNavigate()
     try {
-      const response = await axios.post('http://127.0.0.1:8000/api/v0.1/guest/register', userData, {
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json'
-        }
-      })
+      const response = await axiosBaseUrl.post('guest/register', userData)
+      navigate('/')
+      console.log(response.data)
     } catch (err) {
-      setError('Registration failed')
+      setError('Error occurred during registration')
     }
   }
 
@@ -49,7 +49,7 @@ const Register = () => {
         </div>
         <div className="form-group">
           <label>Email</label>
-          <input type="email" name="email" value={userData.email} onChange={handleChange} />
+          <input type="text" name="email" value={userData.email} onChange={handleChange} />
         </div>
         <div className="form-group">
           <label>Password</label>

@@ -3,6 +3,10 @@ name: Deploy Laravel to EC2
 on:
   push:
     branches: [main]
+    paths:
+      - "backend/**"
+      - "docker-compose.yml"
+      - ".github/workflows/deploy.yml"
 
 jobs:
   deploy:
@@ -12,23 +16,27 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Install SSH key
-        uses: shimataro/ssh-key-action@v2
-        with:
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          known_hosts: ${{ secrets.KNOWN_HOSTS }}
-
       - name: Copy files to EC2
-        run: |
-          scp -o StrictHostKeyChecking=no -r backend docker-compose.yml ${{ secrets.SSH_USER }}@${{ secrets.EC2_HOST }}:/home/${{ secrets.SSH_USER }}/app
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "backend,docker-compose.yml"
+          target: "/home/${{ secrets.SSH_USER }}/app"
+          strip_components: 1
 
       - name: Deploy on EC2
-        run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
-          cd /home/${{ secrets.SSH_USER }}/app
-          docker-compose down
-          docker-compose up -d --build
-          EOF
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /home/${{ secrets.SSH_USER }}/app
+            docker-compose down
+            docker-compose pull || true
+            docker-compose up -d --build
 
 # name: Deploy Laravel to EC2
 

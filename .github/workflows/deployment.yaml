@@ -62,7 +62,7 @@ jobs:
               git pull origin main
             else
               sudo rm -rf /var/www/html/{*,.*} 2> /dev/null || true
-              git clone https://${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git .
+              git clone git@github.com:${{ github.repository }}.git .
               git checkout main
             fi
 

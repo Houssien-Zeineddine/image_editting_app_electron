@@ -2,7 +2,7 @@ name: Deploy Laravel to EC2
 
 on:
   push:
-    branches: [main] # Trigger on push to main branch
+    branches: [main]
 
 jobs:
   deploy:
@@ -20,14 +20,13 @@ jobs:
 
       - name: Copy files to EC2
         run: |
-          scp -r backend docker-compose.yml ${{ secrets.SSH_USER }}@${{ secrets.EC2_HOST }}:/home/${{ secrets.SSH_USER }}/app
+          scp -o StrictHostKeyChecking=no -r backend docker-compose.yml ${{ secrets.SSH_USER }}@${{ secrets.EC2_HOST }}:/home/${{ secrets.SSH_USER }}/app
 
       - name: Deploy on EC2
         run: |
           ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
           cd /home/${{ secrets.SSH_USER }}/app
           docker-compose down
-          docker-compose pull || true
           docker-compose up -d --build
           EOF
 

@@ -19,11 +19,11 @@ Route::group(["prefix" => "v0.1"], function () {
             Route::post('/logout', [AuthController::class, 'logout']);
 
             // Image routes
-            Route::get('/images', [ImageController::class, 'index']);
-            Route::post('/images', [ImageController::class, 'store']);
-            Route::get('/images/{image}', [ImageController::class, 'show']);
-            Route::put('/images/{image}', [ImageController::class, 'update']);
-            Route::delete('/images/{image}', [ImageController::class, 'destroy']);
+            // Route::get('/images', [ImageController::class, 'index']);
+            // Route::post('/images', [ImageController::class, 'store']);
+            // Route::get('/images/{image}', [ImageController::class, 'show']);
+            // Route::put('/images/{image}', [ImageController::class, 'update']);
+            // Route::delete('/images/{image}', [ImageController::class, 'destroy']);
         });
     });
 });

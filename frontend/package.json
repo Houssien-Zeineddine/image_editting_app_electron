@@ -23,6 +23,7 @@
     "@electron/remote": "^2.1.2",
     "axios": "^1.8.4",
     "fabric": "^6.6.2",
+    "path-browserify": "^1.0.1",
     "react-image-crop": "^11.0.7",
     "react-router-dom": "^7.5.0"
   },

@@ -4,94 +4,38 @@ namespace App\Http\Controllers;
 
 use App\Models\LoginLog;
 use App\Models\User;
-use Illuminate\Http\Request;
-// use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Validation\ValidationException;
 use App\Http\Requests\CreateDataRequest;
+use Illuminate\Http\Request;
+use App\Http\Requests\LoginRequest;
 use App\Services\AuthService;
-// use App\Traits\ResponseTrait;
+
 
 class AuthController extends Controller
 {
     // use ResponseTrait;
-    public function register(Request $request)
+    public function register(CreateDataRequest $request)
     {
         $registerUser = new AuthService();
         $user = $registerUser->registerUser($request);
 
         return $this->successResponse($user);
-        
-        // // Check if the email is already registered
-        // if (User::where('email', $request->email)->exists()) {
-        //     return response()->json([
-        //         'message' => 'Email already registered',
-        //     ], 422);
-        // }
-
-        // $user = new User; 
-        // $user->name = $request->name;
-        // $user->email = $request->email;
-        // $user->password = bcrypt($request->password);
-        // $user->save();
-
-        // if ($user){
-        //     return $this->successResponse($user);
-        // } else {
-        //     return $this->errorResponse('Registeration failed', 422); //422 means unprocessable entity which means the request was well formed but the server was unable to process it
-        // }
-
-        // return response()->json([
-        //     'message' => 'User registered successfully',
-        //     'user' => $user,
-        // ], 201);
     }
 
-    public function login(Request $request)
+    public function login(LoginRequest $request)
     {
         $loginUsers = new AuthService();
 
         $user = $loginUsers->loginUser($request);
 
         return $this->successResponse($user,200);
-
-        // if($user) {
-        //     return $this->successResponse($user);
-        // } else {
-        //     return $this->errorResponse('Login failed', 422);
-        // }
-
-        // $request->validate([
-        //     'email' => 'required|string|email',
-        //     'password' => 'required|string',
-        // ]);
-
-        /* if (!Auth::attempt($request->only('email', 'password'))) {
-            throw ValidationException::withMessages([
-                'email' => ['The provided credentials are incorrect.'],
-            ]);
-        }
-
-        $user = $request->user();
-        $token = $user->createToken('auth_token')->plainTextToken; */
-
-        // Log login activity
-        // $this->logLoginActivity($user, $request);
-
-        //below iam returning the user object inside an array that is why it was not accessible on the frontend
-        // return response()->json([
-        //     $user
-        // ]);
-
-        // return response()->json([
-        //     'message' => 'Login successful',
-        //     'user' => $user,
-        // ], 200);
     }
 
     public function logout(Request $request)
     {
+        
         $user = new AuthService();
         $user->logout($request);   
 

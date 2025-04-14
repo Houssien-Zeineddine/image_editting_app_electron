@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, protocol } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
@@ -6,7 +6,6 @@ import fs from 'fs'
 import path from 'path'
 
 function createWindow() {
-  // Create the browser window.
   const mainWindow = new BrowserWindow({
     width: 900,
     height: 670,
@@ -14,14 +13,15 @@ function createWindow() {
     autoHideMenuBar: true,
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
+      preload: path.join(__dirname, '../preload/index.js'),
       sandbox: false,
-      nodeIntegration: true,
-      contextIsolation: true
+      contextIsolation: true, // Keep enabled for security
+      nodeIntegration: false, // Disable for better security
+      webSecurity: true // Keep enabled for production
     }
   })
 
-  mainWindow.setAlwaysOnTop(true, 'screen');
+  mainWindow.setAlwaysOnTop(true, 'screen')
 
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
@@ -32,8 +32,6 @@ function createWindow() {
     return { action: 'deny' }
   })
 
-  // HMR for renderer base on electron-vite cli.
-  // Load the remote URL for development or the local html file for production.
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
@@ -41,95 +39,114 @@ function createWindow() {
   }
 }
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
-  // Set app user model id for windows
+  const userDataPath = app.getPath('userData') // Get this once
+
+  protocol.registerFileProtocol('app', (request, callback) => {
+    try {
+      const userDataPath = app.getPath('userData');
+      const decodedUrl = decodeURIComponent(request.url);
+      const protocolPrefix = 'app://';
+  
+      if (!decodedUrl.startsWith(protocolPrefix)) {
+        console.error('Invalid protocol format');
+        return callback({ error: -324 });
+      }
+  
+      // Extract path after protocol
+      let filePath = decodedUrl.substring(protocolPrefix.length);
+  
+      // Remove leading slash if present
+      if (filePath.startsWith('/')) {
+        filePath = filePath.slice(1);
+      }
+  
+      // Handle any remaining URL encoding
+      filePath = filePath.split('/').map(segment => decodeURIComponent(segment)).join('/');
+  
+      const fullPath = path.join(userDataPath, ...filePath.split('/'));
+  
+      // Security check
+      if (!fullPath.startsWith(userDataPath)) {
+        console.error('Security violation:', fullPath);
+        return callback({ error: -324 });
+      }
+  
+      console.log('Serving file:', fullPath);
+      callback({ path: fullPath });
+    } catch (error) {
+      console.error('Protocol error:', error);
+      callback({ error: -324 });
+    }
+  });
+  
+
+  const testImagePath = path.join(app.getPath('userData'), 'images/test.jpg');
+  fs.writeFileSync(testImagePath, 'TEST'); // Create dummy file
+  console.log('Test file exists:', fs.existsSync(testImagePath));
+
   electronApp.setAppUserModelId('com.electron')
 
-  // Default open or close DevTools by F12 in development
-  // and ignore CommandOrControl + R in production.
-  // see https://github.com/alex8088/electron-toolkit/tree/master/packages/utils
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
   })
 
-  // IPC test
-  //ipcMain.on('ping', () => console.log('pong'))
-
+  // IPC Handlers
   ipcMain.handle('save-image', async (_, { fileName, buffer }) => {
-  const userDataPath = app.getPath('userData')
-  const imagesPath = path.join(userDataPath, 'images')
-  
-  if (!fs.existsSync(imagesPath)) {
-    fs.mkdirSync(imagesPath, { recursive: true })
-  }
-  
-  const filePath = path.join(imagesPath, fileName)
-  fs.writeFileSync(filePath, Buffer.from(buffer))
-  return filePath
-})
-
-ipcMain.handle('load-images', async () => {
-  try {
-    const userDataPath = app.getPath('userData');
-    const imagesPath = path.join(userDataPath, 'images');
-
-    if (!fs.existsSync(imagesPath)) return [];
+    const userDataPath = app.getPath('userData')
+    const imagesPath = path.join(userDataPath, 'images')
     
-    // Check if imagesPath is actually a directory
-    const stats = fs.statSync(imagesPath);
-    if (!stats.isDirectory()) return [];
+    if (!fs.existsSync(imagesPath)) {
+      fs.mkdirSync(imagesPath, { recursive: true })
+    }
+    
+    const filePath = path.join(imagesPath, fileName)
+    fs.writeFileSync(filePath, Buffer.from(buffer))
+    return filePath
+  })
 
-    const files = fs.readdirSync(imagesPath);
+  ipcMain.handle('load-images', async () => {
+    try {
+      const userDataPath = app.getPath('userData');
+      const imagesPath = path.join(userDataPath, 'images');
+  
+      if (!fs.existsSync(imagesPath)) return [];
+  
+      return fs.readdirSync(imagesPath)
+        .filter(file => ['.jpg', '.jpeg', '.png'].includes(path.extname(file).toLowerCase()))
+        .map(file => ({
+          name: file,
+          path: path.relative(userDataPath, path.join(imagesPath, file)).replace(/\\/g, '/')
+        }));
+    } catch (error) {
+      console.error('Load images error:', error);
+      return [];
+    }
+  });
+  
+  ipcMain.handle('delete-image', async (_, fileName) => {
+    const userDataPath = app.getPath('userData')
+    const filePath = path.join(userDataPath, 'images', fileName)
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath)
+      return true
+    }
+    return false
+  })
 
-    return files
-      .filter(file => {
-        const ext = path.extname(file).toLowerCase();
-        return ['.jpg', '.jpeg', '.png'].includes(ext);
-      })
-      .map(file => ({
-        name: file,
-        path: path.join(imagesPath, file)
-      }));
-  } catch (error) {
-    console.error('Error loading images:', error);
-    return []; // Return empty array on error
-  }
-});
-
-ipcMain.handle('delete-image', async (_, fileName) => {
-  const userDataPath = app.getPath('userData')
-  const filePath = path.join(userDataPath, 'images', fileName)
-  if (fs.existsSync(filePath)) {
-    fs.unlinkSync(filePath)
-    return true
-  }
-  return false
-})
-
-ipcMain.handle('get-app-path', () => {
-  return app.getPath('userData')
-})
+  ipcMain.handle('get-app-path', () => {
+    return app.getPath('userData')
+  })
 
   createWindow()
 
-  app.on('activate', function () {
-    // On macOS it's common to re-create a window in the app when the
-    // dock icon is clicked and there are no other windows open.
+  app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
 })
 
-// Quit when all windows are closed, except on macOS. There, it's common
-// for applications and their menu bar to stay active until the user quits
-// explicitly with Cmd + Q.
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit()
   }
 })
-
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and require them here.

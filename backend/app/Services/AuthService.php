@@ -20,13 +20,12 @@ class AuthService extends Controller
             throw ValidationException::withMessages([
                 'password' => ['The provided password does not match.'],
             ]);
-            // return $this->errorResponse("Passwords don't match", 422);
         }
 
         $user = new User; 
         $user->name = $request->name;
         $user->email = $request->email;
-        $user->password = bcrypt($request->password);
+        $user->password = $request->password;
         $user->save();
         //return $user->save();
 
@@ -35,10 +34,7 @@ class AuthService extends Controller
 
     public function loginUser (Request $request)
     {
-        if (!Auth::attempt($request->only('email', 'password'))) { //auth::attempt is a method of the Auth facade that checks if the user exists in the database and if the password is correct
-            // throw ValidationException::withMessages([ 
-            //     'email' => ['The provided credentials are incorrect.'], //if throw validation exception, the function will stop executing and return a 422 error
-            // ]);
+        if (!Auth::attempt($request->only('email', 'password'))) { 
             return $this->errorResponse('Invalid credentials', 422);
         }
 
@@ -49,7 +45,7 @@ class AuthService extends Controller
         return $user;
     }
 
-    public function logout ($request) {
+    public function logout (Request $request) {
         $user = Auth::user();
         $user->tokens()->delete();
 

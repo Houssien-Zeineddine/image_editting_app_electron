@@ -19,8 +19,10 @@ const ImageUpload = () => {
   const handleUpload = async () => {
     if (!file || !window.electronAPI) return
 
+    console.log('in handelUpload before calling savImage')
+
     try {
-      setIsUploading(true)
+      //setIsUploading(true)
       const arrayBuffer = await file.arrayBuffer()
       const fileName = `${Date.now()}-${file.name}`
 
@@ -46,7 +48,7 @@ const ImageUpload = () => {
       <input type="file" onChange={handleFileChange} accept="image/*" disabled={isUploading} />
       {preview && (
         <div className="preview">
-          <img src={preview} alt="Preview" />
+          <img src={preview} className="image-preview" alt="Preview" />
         </div>
       )}
       <button onClick={handleUpload} disabled={!file || isUploading} aria-busy={isUploading}>

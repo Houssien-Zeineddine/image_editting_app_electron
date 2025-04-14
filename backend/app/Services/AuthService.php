@@ -51,4 +51,6 @@ class AuthService extends Controller
 
         return $user;
     }
+
+    
 }

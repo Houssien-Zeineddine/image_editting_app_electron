@@ -30,6 +30,8 @@ class AuthController extends Controller
 
         $user = $loginUsers->loginUser($request);
 
+        $this->logLoginActivity($user, $request);
+
         return $this->successResponse($user,200);
     }
 
@@ -63,24 +65,24 @@ class AuthController extends Controller
 
     protected function getLocationFromIp($ip)
     {
+        if ($ip === '127.0.0.1') return 'Localhost';
+
         try {
-            // Using ip-api.com (free service)
-            $response = Http::get("http://ip-api.com/json/{$ip}?fields=country,regionName,city");
+            $response = Http::get("https://ipinfo.io/{$ip}/json?token=YOUR_FREE_TOKEN");
             
             if ($response->successful()) {
                 $data = $response->json();
-                if ($data['status'] !== 'fail') {
-                    return implode(', ', array_filter([
-                        $data['city'] ?? null,
-                        $data['regionName'] ?? null,
-                        $data['country'] ?? null,
-                    ]));
-                }
+                // return implode(', ', array_filter([
+                //     $data['city'] ?? null,
+                //     $data['region'] ?? null,  // Note: 'region' instead of 'regionName'
+                //     $data['country'] ?? null
+                // ]));
+                return $data;
             }
         } catch (\Exception $e) {
-            // Silently fail if the service is unavailable
+            \Log::error("IPinfo.io failed: ".$e->getMessage());
         }
-
-        return 'Unknown location';
+        
+        return 'Unknown';
     }
 }

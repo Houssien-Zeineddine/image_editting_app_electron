@@ -2,11 +2,7 @@ name: Deploy Laravel to EC2
 
 on:
   push:
-    branches: [main]
-    paths:
-      - "backend/**"
-      - "docker-compose.yml"
-      - ".github/workflows/deploy.yml"
+    branches: [main] # Trigger on push to main branch
 
 jobs:
   deploy:

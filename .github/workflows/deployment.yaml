@@ -48,6 +48,8 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_KEY }} # Fixed: Changed from EC2_SSH_KEY to EC2_KEY for consistency
           script: |
+            sudo usermod -aG docker $USER 
+            newgrp docker
             # Create directory and set permissions
             sudo mkdir -p /var/www/html
             sudo chown -R $USER:$USER /var/www/html
@@ -60,7 +62,7 @@ jobs:
               git pull origin main
             else
               sudo rm -rf /var/www/html/{*,.*} 2> /dev/null || true
-              git clone https://${{ github.actor }}:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} .
+              git clone https://${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git .
               git checkout main
             fi
 

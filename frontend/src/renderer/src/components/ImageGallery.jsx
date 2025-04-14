@@ -134,7 +134,7 @@ const ImageGallery = () => {
 
           {editMode === 'crop' ? (
             <ReactCrop
-              src={`app://${selectedImage.path}`}
+              src={`app:///${selectedImage.path}`}
               crop={crop}
               onChange={(newCrop) => setCrop(newCrop)}
               onImageLoaded={handleCrop}

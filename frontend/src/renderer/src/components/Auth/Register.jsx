@@ -12,6 +12,7 @@ const Register = () => {
   })
 
   const { error } = useContext(AuthContext)
+  const navigate = useNavigate()
 
   //setting the data entered  by user
   const handleChange = (e) => {
@@ -28,7 +29,6 @@ const Register = () => {
       return
     }
 
-    const navigate = useNavigate()
     try {
       const response = await axiosBaseUrl.post('guest/register', userData)
       navigate('/')

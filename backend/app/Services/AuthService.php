@@ -7,18 +7,25 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use App\Http\Controllers\Controller;
 
-class AuthService
+class AuthService extends Controller
 {
     /**
      * Create a new class instance.
      */
 
     public function registerUser (Request $request) {
+        if ($request->password !== $request->password_confirmation) {
+            throw ValidationException::withMessages([
+                'password' => ['The provided password does not match.'],
+            ]);
+        }
+
         $user = new User; 
         $user->name = $request->name;
         $user->email = $request->email;
-        $user->password = bcrypt($request->password);
+        $user->password = $request->password;
         $user->save();
         //return $user->save();
 
@@ -27,10 +34,8 @@ class AuthService
 
     public function loginUser (Request $request)
     {
-        if (!Auth::attempt($request->only('email', 'password'))) { //auth::attempt is a method of the Auth facade that checks if the user exists in the database and if the password is correct
-            throw ValidationException::withMessages([ 
-                'email' => ['The provided credentials are incorrect.'], //if throw validation exception, the function will stop executing and return a 422 error
-            ]);
+        if (!Auth::attempt($request->only('email', 'password'))) { 
+            return $this->errorResponse('Invalid credentials', 422);
         }
 
         $user = Auth::user();
@@ -39,4 +44,13 @@ class AuthService
 
         return $user;
     }
+
+    public function logout (Request $request) {
+        $user = Auth::user();
+        $user->tokens()->delete();
+
+        return $user;
+    }
+
+    
 }

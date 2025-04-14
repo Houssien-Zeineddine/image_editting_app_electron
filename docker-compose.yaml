@@ -13,7 +13,7 @@ services: #services needed to run laravel
     ports:
       - 8000:8000 #whenever iam on port 8000 i want the machine to be on poert 8000, left my machine, right docker container
     #command: ["php", "artisan", "migrate"]
-    # command: ./dockershell.sh
+    command: ./dockershell.sh
 
   database:
     image: mysql:8.0

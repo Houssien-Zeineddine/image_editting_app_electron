@@ -6,7 +6,7 @@ import Login from './components/Auth/Login'
 import Register from './components/Auth/Register'
 import ImageGallery from './components/ImageGallery'
 import ImageUpload from './components/ImageUpload'
-//import PrivateRoute from './components/PrivateRoute'
+import PrivateRoute from './components/PrivateRoute'
 import './style.css'
 
 function App() {
@@ -20,10 +20,10 @@ function App() {
             <Routes>
               <Route path="/" element={<Login />} />
               <Route path="/register" element={<Register />} />
-              <Route path="/imagegallery" element={<ImageGallery />} />
-              <Route path="/upload" element={<ImageUpload />} />
-              {/* <Route
-                path="/"
+              {/* <Route path="/imagegallery" element={<ImageGallery />} />
+              <Route path="/upload" element={<ImageUpload />} /> */}
+              <Route
+                path="/imagegallery"
                 element={
                   <PrivateRoute>
                     <ImageGallery />
@@ -37,7 +37,15 @@ function App() {
                     <ImageUpload />
                   </PrivateRoute>
                 }
-              /> */}
+              />
+              <Route
+                path="/imageeditor"
+                element={
+                  <PrivateRoute>
+                    <ImageUpload />
+                  </PrivateRoute>
+                }
+              />
             </Routes>
           </div>
         </div>

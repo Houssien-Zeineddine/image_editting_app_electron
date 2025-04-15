@@ -40,9 +40,8 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_KEY }}
           script: |
-            cd /path/to/your/project/directory
-            docker-compose pull
             docker-compose down
+            docker rmi ${{ secrets.DOCKER_USERNAME }}/electron-image-edit-app:latest
             docker-compose up -d
 
 # name: Deploy Laravel to EC2

@@ -1,16 +1,12 @@
 import React, { useState, useEffect } from 'react'
-import * as fabric from 'fabric'
-import ReactCrop from 'react-image-crop'
-import 'react-image-crop/dist/ReactCrop.css'
-//import { ipcRenderer } from 'electron'
+import { PhotoEditor } from 'react-photo-editor'
+//import 'react-photo-editor/dist/style.css' // Import the CSS
 
 const ImageGallery = () => {
   const [images, setImages] = useState([])
   const [selectedImage, setSelectedImage] = useState(null)
-  const [crop, setCrop] = useState({ aspect: 1 })
-  const [canvas, setCanvas] = useState(null)
-  const [editMode, setEditMode] = useState('crop')
   const [appPath, setAppPath] = useState('')
+  const [viewingImage, setViewingImage] = useState(null)
 
   useEffect(() => {
     loadImages()
@@ -24,10 +20,6 @@ const ImageGallery = () => {
     }
   }, [])
 
-  // useEffect(() => {
-  //   ipcRenderer.invoke('get-app-path').then(setAppPath)
-  // }, [])
-
   const loadImages = async () => {
     if (!window.electronAPI) return
     const images = await window.electronAPI.loadImages()
@@ -40,49 +32,13 @@ const ImageGallery = () => {
     loadImages()
   }
 
-  const initializeCanvas = (imgElement) => {
-    const newCanvas = new fabric.Canvas('edit-canvas', {
-      width: imgElement.width,
-      height: imgElement.height
-    })
-    newCanvas.add(new fabric.Image(imgElement))
-    setCanvas(newCanvas)
-  }
-
-  const handleCrop = async () => {
-    const croppedImage = await getCroppedImg(selectedImage, crop)
-    const img = new Image()
-    img.src = croppedImage
-    img.onload = () => initializeCanvas(img)
-  }
-
-  const applyFilter = (filterType) => {
-    if (!canvas) return
-
-    switch (filterType) {
-      case 'grayscale':
-        canvas.getActiveObject().filters.push(new fabric.Image.filters.Grayscale())
-        break
-      case 'rotate':
-        canvas.getActiveObject().rotate(90)
-        break
-    }
-    canvas.renderAll()
-  }
-
-  const saveEditedImage = async () => {
-    if (!window.electronAPI || !canvas) return
+  const handleSaveEditedImage = async (editedImageBlob) => {
+    if (!window.electronAPI) return
 
     try {
-      const dataUrl = canvas.toDataURL()
-      // Convert base64 to Uint8Array without Node.js Buffer
-      const byteString = atob(dataUrl.split(',')[1])
-      const arrayBuffer = new ArrayBuffer(byteString.length)
+      // Convert Blob to ArrayBuffer
+      const arrayBuffer = await new Response(editedImageBlob).arrayBuffer()
       const uint8Array = new Uint8Array(arrayBuffer)
-
-      for (let i = 0; i < byteString.length; i++) {
-        uint8Array[i] = byteString.charCodeAt(i)
-      }
 
       await window.electronAPI.saveImage({
         fileName: `edited-${Date.now()}.png`,
@@ -90,7 +46,6 @@ const ImageGallery = () => {
       })
 
       loadImages()
-      setSelectedImage(null)
     } catch (error) {
       console.error('Save failed:', error)
     }
@@ -101,10 +56,9 @@ const ImageGallery = () => {
       <h2>Image Gallery</h2>
       <div className="grid">
         {images.map((img, index) => (
-          //console.log('Image URL from imagegallery component:', `app:///${img.path}`),
           <div key={index} className="thumbnail">
             <img
-              src={`app://${img.path}`} // Changed from app:/// to app://
+              src={`app://${img.path}`}
               alt={img.name}
               onError={(e) => {
                 console.error('Image load failed:', {
@@ -115,8 +69,32 @@ const ImageGallery = () => {
               }}
             />
             <div className="controls">
-              <button onClick={() => setSelectedImage(img)}>Edit</button>
-              <button onClick={() => handleDelete(img.name)}>Delete</button>
+              <button onClick={() => setSelectedImage(img)} className="btn">
+                Edit
+              </button>
+              <button onClick={() => setViewingImage(img)} className="btn view-btn">
+                View
+              </button>
+              {viewingImage && (
+                <div className="view-modal" onClick={() => setViewingImage(null)}>
+                  <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                    <button className="close-btn" onClick={() => setViewingImage(null)}>
+                      &times;
+                    </button>
+                    <img
+                      src={`app://${viewingImage.path}`}
+                      alt={viewingImage.name}
+                      className="image-viewed"
+                    />
+                    <div className="image-info">
+                      <p>Name: {viewingImage.name}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              <button onClick={() => handleDelete(img.name)} className="btn delete-btn">
+                Delete
+              </button>
             </div>
           </div>
         ))}
@@ -124,59 +102,36 @@ const ImageGallery = () => {
 
       {selectedImage && (
         <div className="edit-modal">
-          <div className="edit-tools">
-            <button onClick={() => setEditMode('crop')}>Crop</button>
-            <button onClick={() => applyFilter('grayscale')}>B&W</button>
-            <button onClick={() => applyFilter('rotate')}>Rotate</button>
-            <button onClick={saveEditedImage}>Save</button>
-            <button onClick={() => setSelectedImage(null)}>Cancel</button>
-          </div>
-
-          {editMode === 'crop' ? (
-            <ReactCrop
-              src={`app:///${selectedImage.path}`}
-              crop={crop}
-              onChange={(newCrop) => setCrop(newCrop)}
-              onImageLoaded={handleCrop}
-            />
-          ) : (
-            <canvas id="edit-canvas" />
-          )}
+          <PhotoEditor
+            image={`app://${selectedImage.path}`}
+            onSave={(editedImage) => {
+              handleSaveEditedImage(editedImage)
+              setSelectedImage(null)
+            }}
+            onClose={() => setSelectedImage(null)}
+            tools={[
+              'crop',
+              'rotate',
+              'brightness',
+              'contrast',
+              'saturation',
+              'filter',
+              'text',
+              'draw',
+              'resize'
+            ]}
+            defaultTool="crop"
+            hideHeader
+            style={{
+              width: '100%',
+              height: '100%',
+              backgroundColor: '#f5f5f5'
+            }}
+          />
         </div>
       )}
     </div>
   )
-}
-
-const getCroppedImg = (image, crop) => {
-  const canvas = document.createElement('canvas')
-  const img = new Image()
-  img.src = `app://${image.path}`
-
-  return new Promise((resolve) => {
-    img.onload = () => {
-      const scaleX = img.naturalWidth / img.width
-      const scaleY = img.naturalHeight / img.height
-
-      canvas.width = crop.width * scaleX
-      canvas.height = crop.height * scaleY
-
-      const ctx = canvas.getContext('2d')
-      ctx.drawImage(
-        img,
-        crop.x * scaleX,
-        crop.y * scaleY,
-        crop.width * scaleX,
-        crop.height * scaleY,
-        0,
-        0,
-        canvas.width,
-        canvas.height
-      )
-
-      resolve(canvas.toDataURL())
-    }
-  })
 }
 
 export default ImageGallery

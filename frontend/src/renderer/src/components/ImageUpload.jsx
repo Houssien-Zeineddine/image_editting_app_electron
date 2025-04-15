@@ -51,7 +51,12 @@ const ImageUpload = () => {
           <img src={preview} className="image-preview" alt="Preview" />
         </div>
       )}
-      <button onClick={handleUpload} disabled={!file || isUploading} aria-busy={isUploading}>
+      <button
+        onClick={handleUpload}
+        className="btn"
+        disabled={!file || isUploading}
+        aria-busy={isUploading}
+      >
         {isUploading ? 'Uploading...' : 'Upload'}
       </button>
       {error && <div className="error-message">{error}</div>}

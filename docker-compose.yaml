@@ -5,7 +5,7 @@ services:
       - LARAVEL_DATABASE_HOST=database
       - LARAVEL_DATABASE_NAME=electron_image_editing_db
       - LARAVEL_DATABASE_USER=root
-      - LARAVEL_DATABASE_PASSWORD=1111
+      - LARAVEL_DATABASE_PASSWORD=1234
       - LARAVEL_DATABASE_PORT_NUMBER=3306
     restart: always
     ports:
@@ -19,10 +19,10 @@ services:
       - MYSQL_ROOT_PASSWORD=1234
       - MYSQL_DATABASE=electron_image_editing_db
     volumes:
-      - app-data:/var/lib/mysql
+      - db-data:/var/lib/mysql
 
 volumes:
-  app-data:
+  db-data:
 
 
 

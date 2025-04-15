@@ -40,9 +40,6 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_KEY }}
           script: |
-            mkdir -p /home/ubuntu/app
-            echo "${{ secrets.DOCKER_COMPOSE }}" > /home/ubuntu/app/docker-compose.yml
-            cd /home/ubuntu/app
             docker-compose down
             docker rmi ${{ secrets.DOCKER_USERNAME }}/electron-image-edit-app:latest
             docker-compose up -d

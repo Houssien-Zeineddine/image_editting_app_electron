@@ -38,6 +38,14 @@ function App() {
                   </PrivateRoute>
                 }
               />
+              <Route
+                path="/imageeditor"
+                element={
+                  <PrivateRoute>
+                    <ImageUpload />
+                  </PrivateRoute>
+                }
+              />
             </Routes>
           </div>
         </div>

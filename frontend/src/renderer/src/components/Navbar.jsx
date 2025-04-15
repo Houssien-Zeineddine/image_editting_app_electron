@@ -31,7 +31,7 @@ const Navbar = () => {
             <Link to="/upload" className="navbar-item">
               Upload
             </Link>
-            <button onClick={handleLogout} className="navbar-item logout-button">
+            <button onClick={handleLogout} className="logout-button">
               Logout
             </button>
           </>

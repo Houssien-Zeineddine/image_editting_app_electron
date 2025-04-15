@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react'
+import { PhotoEditor } from 'react-photo-editor'
+//import 'react-photo-editor/dist/style.css' // Import the CSS
 
 const ImageGallery = () => {
   const [images, setImages] = useState([])
@@ -30,22 +32,20 @@ const ImageGallery = () => {
     loadImages()
   }
 
-  const handleEdit = (image) => {
-    setSelectedImage(image)
-  }
-
-  const handleSaveEditedImage = async (editedImageData) => {
+  const handleSaveEditedImage = async (editedImageBlob) => {
     if (!window.electronAPI) return
 
     try {
-      // This will depend on how your new library provides the edited image
+      // Convert Blob to ArrayBuffer
+      const arrayBuffer = await new Response(editedImageBlob).arrayBuffer()
+      const uint8Array = new Uint8Array(arrayBuffer)
+
       await window.electronAPI.saveImage({
         fileName: `edited-${Date.now()}.png`,
-        buffer: editedImageData
+        buffer: uint8Array
       })
 
       loadImages()
-      setSelectedImage(null)
     } catch (error) {
       console.error('Save failed:', error)
     }
@@ -69,7 +69,7 @@ const ImageGallery = () => {
               }}
             />
             <div className="controls">
-              <button onClick={() => handleEdit(img)} className="btn">
+              <button onClick={() => setSelectedImage(img)} className="btn">
                 Edit
               </button>
               <button onClick={() => setViewingImage(img)} className="btn view-btn">
@@ -102,19 +102,32 @@ const ImageGallery = () => {
 
       {selectedImage && (
         <div className="edit-modal">
-          <div className="edit-tools">
-            {/* You'll add your new library's editing controls here */}
-            <button onClick={() => setSelectedImage(null)} className="btn">
-              Cancel
-            </button>
-          </div>
-
-          {/* This is where your new image editor component will go */}
-          <div id="editor-container">
-            {/* Your new library will render here */}
-            <p>Image editor will appear here</p>
-            <img src={`app://${selectedImage.path}`} alt="Selected for editing" />
-          </div>
+          <PhotoEditor
+            image={`app://${selectedImage.path}`}
+            onSave={(editedImage) => {
+              handleSaveEditedImage(editedImage)
+              setSelectedImage(null)
+            }}
+            onClose={() => setSelectedImage(null)}
+            tools={[
+              'crop',
+              'rotate',
+              'brightness',
+              'contrast',
+              'saturation',
+              'filter',
+              'text',
+              'draw',
+              'resize'
+            ]}
+            defaultTool="crop"
+            hideHeader
+            style={{
+              width: '100%',
+              height: '100%',
+              backgroundColor: '#f5f5f5'
+            }}
+          />
         </div>
       )}
     </div>

@@ -2,9 +2,10 @@ name: Push and Run
 
 on:
   push:
+
     branches:
       - main
-
+      
 jobs:
   Build-Laravel-And-Push-Dockerhub:
     runs-on: ubuntu-latest

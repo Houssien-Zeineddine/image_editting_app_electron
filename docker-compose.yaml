@@ -1,6 +1,6 @@
 services:
   server:
-    image: houssienzed/dockertest:latest
+    image: houssienzed/electron-image-edit-app:latest
     environment:
       - LARAVEL_DATABASE_HOST=database
       - LARAVEL_DATABASE_NAME=electron_image_editing_db

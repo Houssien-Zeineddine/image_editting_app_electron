@@ -19,10 +19,10 @@ services:
       - MYSQL_ROOT_PASSWORD=1234
       - MYSQL_DATABASE=electron_image_editing_db
     volumes:
-      - db-data:/var/lib/mysql
+      - app-data:/var/lib/mysql
 
 volumes:
-  db-data:
+  app-data:
 
 
 

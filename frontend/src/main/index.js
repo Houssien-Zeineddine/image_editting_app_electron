@@ -15,9 +15,9 @@ function createWindow() {
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.js'),
       sandbox: false,
-      contextIsolation: true, // Keep enabled for security
-      nodeIntegration: false, // Disable for better security
-      webSecurity: true // Keep enabled for production
+      contextIsolation: true, 
+      nodeIntegration: false, 
+      webSecurity: true 
     }
   })
 
@@ -53,20 +53,16 @@ app.whenReady().then(() => {
         return callback({ error: -324 });
       }
   
-      // Extract path after protocol
       let filePath = decodedUrl.substring(protocolPrefix.length);
   
-      // Remove leading slash if present
       if (filePath.startsWith('/')) {
         filePath = filePath.slice(1);
       }
   
-      // Handle any remaining URL encoding
       filePath = filePath.split('/').map(segment => decodeURIComponent(segment)).join('/');
   
       const fullPath = path.join(userDataPath, ...filePath.split('/'));
   
-      // Security check
       if (!fullPath.startsWith(userDataPath)) {
         console.error('Security violation:', fullPath);
         return callback({ error: -324 });
@@ -82,7 +78,7 @@ app.whenReady().then(() => {
   
 
   const testImagePath = path.join(app.getPath('userData'), 'images/test.jpg');
-  fs.writeFileSync(testImagePath, 'TEST'); // Create dummy file
+  fs.writeFileSync(testImagePath, 'TEST'); 
   console.log('Test file exists:', fs.existsSync(testImagePath));
 
   electronApp.setAppUserModelId('com.electron')
@@ -91,7 +87,7 @@ app.whenReady().then(() => {
     optimizer.watchWindowShortcuts(window)
   })
 
-  // IPC Handlers
+ 
   ipcMain.handle('save-image', async (_, { fileName, buffer }) => {
     const userDataPath = app.getPath('userData')
     const imagesPath = path.join(userDataPath, 'images')

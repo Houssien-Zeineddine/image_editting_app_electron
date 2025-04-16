@@ -22,11 +22,9 @@ const ImageUpload = () => {
     console.log('in handelUpload before calling savImage')
 
     try {
-      //setIsUploading(true)
       const arrayBuffer = await file.arrayBuffer()
       const fileName = `${Date.now()}-${file.name}`
 
-      // Use the exposed electronAPI instead of direct ipcRenderer
       await window.electronAPI.saveImage({
         fileName,
         buffer: arrayBuffer

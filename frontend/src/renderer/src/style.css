@@ -348,3 +348,36 @@ body {
   .view-btn:hover {
     background-color: #239452;
   }
+
+  .editor-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    flex-direction: column;
+    z-index: 1000;
+  }
+  
+  .editor-toolbar {
+    padding: 10px;
+    background: #333;
+    color: white;
+    display: flex;
+    gap: 10px;
+  }
+  
+  .editor-toolbar button {
+    padding: 5px 10px;
+    cursor: pointer;
+  }
+  
+  .editor-content {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+  }

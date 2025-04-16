@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import { PhotoEditor } from 'react-photo-editor'
-//import 'react-photo-editor/dist/style.css' // Import the CSS
+import ImageEditor from '../components/ImageEditor'
+//import { fabric } from 'fabric'
 
 const ImageGallery = () => {
   const [images, setImages] = useState([])
@@ -36,7 +36,6 @@ const ImageGallery = () => {
     if (!window.electronAPI) return
 
     try {
-      // Convert Blob to ArrayBuffer
       const arrayBuffer = await new Response(editedImageBlob).arrayBuffer()
       const uint8Array = new Uint8Array(arrayBuffer)
 
@@ -102,31 +101,13 @@ const ImageGallery = () => {
 
       {selectedImage && (
         <div className="edit-modal">
-          <PhotoEditor
+          <ImageEditor
             image={`app://${selectedImage.path}`}
             onSave={(editedImage) => {
               handleSaveEditedImage(editedImage)
               setSelectedImage(null)
             }}
             onClose={() => setSelectedImage(null)}
-            tools={[
-              'crop',
-              'rotate',
-              'brightness',
-              'contrast',
-              'saturation',
-              'filter',
-              'text',
-              'draw',
-              'resize'
-            ]}
-            defaultTool="crop"
-            hideHeader
-            style={{
-              width: '100%',
-              height: '100%',
-              backgroundColor: '#f5f5f5'
-            }}
           />
         </div>
       )}

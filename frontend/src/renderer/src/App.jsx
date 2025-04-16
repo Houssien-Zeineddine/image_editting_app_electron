@@ -20,8 +20,6 @@ function App() {
             <Routes>
               <Route path="/" element={<Login />} />
               <Route path="/register" element={<Register />} />
-              {/* <Route path="/imagegallery" element={<ImageGallery />} />
-              <Route path="/upload" element={<ImageUpload />} /> */}
               <Route
                 path="/imagegallery"
                 element={

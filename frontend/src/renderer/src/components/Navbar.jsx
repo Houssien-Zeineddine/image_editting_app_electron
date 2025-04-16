@@ -9,7 +9,6 @@ const Navbar = () => {
 
   const handleLogout = async () => {
     console.log('logout')
-    // const token = localStorage.getItem('access_token')
     const response = await axiosBaseUrl.post('/user/logout', {})
     localStorage.removeItem('access_token')
     setUser(null)

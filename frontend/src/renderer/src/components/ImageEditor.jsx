@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import ReactCrop from 'react-image-crop'
 import 'react-image-crop/dist/ReactCrop.css'
-import { fabric } from 'fabric/dist/fabric.min.js'
+//import { fabric } from 'fabric/dist/fabric.min.js'
 
 const ImageEditor = ({ image, onSave, onClose }) => {
   const [mode, setMode] = useState('crop')

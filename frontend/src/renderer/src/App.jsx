@@ -7,6 +7,7 @@ import Register from './components/Auth/Register'
 import ImageGallery from './components/ImageGallery'
 import ImageUpload from './components/ImageUpload'
 import PrivateRoute from './components/PrivateRoute'
+//import ChatWidget from './components/chat/ChatWidget'
 import './style.css'
 
 function App() {
@@ -46,6 +47,7 @@ function App() {
               />
             </Routes>
           </div>
+          {/* <ChatWidget /> */}
         </div>
       </AuthProvider>
     </Router>

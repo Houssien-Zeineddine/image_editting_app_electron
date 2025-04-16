@@ -30,24 +30,3 @@ if (process.contextIsolated) {
   window.api = api
 }
 
-// getImages: () => {
-//   try {
-//     if (!fs.existsSync(imageDir)) return []
-//     const files = fs.readdirSync(imageDir)
-//     const imageFiles = files.filter((file) => /\.(png|jpe?g)$/i.test(file))
-//     return imageFiles.map((file) => {
-//       const filePath = path.join(imageDir, file)
-//       const imageBuffer = fs.readFileSync(filePath)
-//       const base64 = imageBuffer.toString('base64')
-//       const mime = file.endsWith('.jpg') || file.endsWith('.jpeg') ? 'image/jpeg' : 'image/png'
-//       return {
-//         name: file,
-//         src: `data:${mime};base64,${base64}`,
-//         fullPath: filePath
-//       }
-//     })
-//   } catch (err) {
-//     console.error('Error reading image files:', err)
-//     return []
-//   }
-// }

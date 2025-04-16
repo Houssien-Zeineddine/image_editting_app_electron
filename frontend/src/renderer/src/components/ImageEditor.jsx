@@ -1,167 +1,154 @@
-import React, { useState, useEffect, useRef, useContext } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { getImage, updateImage } from '../services/images'
-import { AuthContext } from '../context/AuthContext'
+import React, { useState, useRef, useEffect } from 'react'
+import ReactCrop from 'react-image-crop'
+import 'react-image-crop/dist/ReactCrop.css'
+import { fabric } from 'fabric/dist/fabric.min.js'
 
-const ImageEditor = () => {
-  const { id } = useParams()
-  const navigate = useNavigate()
-  const { user } = useContext(AuthContext)
-  const [image, setImage] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [edits, setEdits] = useState({
-    rotate: 0,
-    grayscale: false,
-    watermark: '',
-    crop: { x: 0, y: 0, width: 100, height: 100 }
-  })
+const ImageEditor = ({ image, onSave, onClose }) => {
+  const [mode, setMode] = useState('crop')
+  const [crop, setCrop] = useState()
+  const [completedCrop, setCompletedCrop] = useState(null)
+  const imgRef = useRef(null)
   const canvasRef = useRef(null)
+  const fabricCanvas = useRef(null)
 
   useEffect(() => {
-    const fetchImage = async () => {
-      try {
-        const data = await getImage(id)
-        if (data.user_id !== user.id) {
-          navigate('/')
-          return
+    if (mode === 'advanced' && canvasRef.current && !fabricCanvas.current) {
+      fabricCanvas.current = new fabric.Canvas(canvasRef.current, {
+        backgroundColor: '#f0f0f0'
+      })
+
+      fabric.Image.fromURL(
+        image,
+        (img) => {
+          img.scaleToWidth(800)
+          img.scaleToHeight(600)
+          fabricCanvas.current.add(img)
+          fabricCanvas.current.renderAll()
+        },
+        {
+          crossOrigin: 'anonymous'
         }
-        setImage(data)
-      } catch (err) {
-        setError('Failed to fetch image')
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchImage()
-  }, [id, user.id, navigate])
-
-  useEffect(() => {
-    if (image && canvasRef.current) {
-      applyEdits()
-    }
-  }, [image, edits])
-
-  const applyEdits = () => {
-    const canvas = canvasRef.current
-    const ctx = canvas.getContext('2d')
-    const img = new Image()
-
-    img.onload = () => {
-      // Clear canvas
-      ctx.clearRect(0, 0, canvas.width, canvas.height)
-
-      // Set canvas dimensions
-      canvas.width = img.width
-      canvas.height = img.height
-
-      // Apply rotation
-      ctx.save()
-      ctx.translate(canvas.width / 2, canvas.height / 2)
-      ctx.rotate((edits.rotate * Math.PI) / 180)
-
-      // Apply grayscale
-      if (edits.grayscale) {
-        ctx.filter = 'grayscale(100%)'
-      } else {
-        ctx.filter = 'none'
-      }
-
-      // Draw the image
-      ctx.drawImage(img, -img.width / 2, -img.height / 2, img.width, img.height)
-
-      // Apply watermark
-      if (edits.watermark) {
-        ctx.font = '30px Arial'
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.5)'
-        ctx.textAlign = 'center'
-        ctx.fillText(edits.watermark, 0, 0)
-      }
-
-      ctx.restore()
+      )
     }
 
-    img.src = `http://localhost:8000/storage/${image.path}`
-  }
+    return () => {
+      if (fabricCanvas.current) {
+        fabricCanvas.current.dispose()
+        fabricCanvas.current = null
+      }
+    }
+  }, [mode, image])
 
-  const handleRotate = (degrees) => {
-    setEdits({ ...edits, rotate: edits.rotate + degrees })
-  }
-
-  const handleGrayscale = () => {
-    setEdits({ ...edits, grayscale: !edits.grayscale })
-  }
-
-  const handleWatermarkChange = (e) => {
-    setEdits({ ...edits, watermark: e.target.value })
+  const handleCropComplete = (crop) => {
+    setCompletedCrop(crop)
   }
 
   const handleSave = async () => {
-    try {
-      const canvas = canvasRef.current
-      canvas.toBlob(
-        async (blob) => {
-          const formData = new FormData()
-          formData.append('image', blob, image.name)
-          formData.append('edits', JSON.stringify(edits))
-
-          await updateImage(image.id, formData)
-          alert('Image saved successfully!')
-          navigate('/')
-        },
-        'image/jpeg',
-        0.9
-      )
-    } catch (err) {
-      setError('Failed to save image')
+    if (mode === 'crop' && completedCrop && imgRef.current) {
+      const croppedImageBlob = await getCroppedImg(imgRef.current, completedCrop)
+      onSave(croppedImageBlob)
+    } else if (mode === 'advanced' && fabricCanvas.current) {
+      const dataURL = fabricCanvas.current.toDataURL({
+        format: 'png',
+        quality: 1
+      })
+      const blob = await (await fetch(dataURL)).blob()
+      onSave(blob)
     }
   }
 
-  if (loading) return <div>Loading...</div>
-  if (error) return <div className="error">{error}</div>
-  if (!image) return <div>Image not found</div>
+  const addText = () => {
+    if (!fabricCanvas.current) return
+    const text = new fabric.Textbox('Edit me', {
+      left: 100,
+      top: 100,
+      width: 150,
+      fontSize: 20,
+      fill: '#000000'
+    })
+    fabricCanvas.current.add(text)
+    fabricCanvas.current.setActiveObject(text)
+    fabricCanvas.current.renderAll()
+  }
+
+  const addRectangle = () => {
+    if (!fabricCanvas.current) return
+    const rect = new fabric.Rect({
+      left: 100,
+      top: 100,
+      fill: 'red',
+      width: 100,
+      height: 100
+    })
+    fabricCanvas.current.add(rect)
+    fabricCanvas.current.renderAll()
+  }
 
   return (
-    <div className="image-editor">
-      <h2>Edit Image</h2>
-      <div className="editor-container">
-        <div className="canvas-container">
-          <canvas ref={canvasRef} />
-        </div>
-        <div className="editor-controls">
-          <div className="control-group">
-            <h3>Rotation</h3>
-            <button onClick={() => handleRotate(90)} className="btn">
-              Rotate 90°
+    <div className="editor-modal">
+      <div className="editor-toolbar">
+        <button onClick={() => setMode('crop')} className="btn">
+          Crop Mode
+        </button>
+        <button onClick={() => setMode('advanced')} className="btn">
+          Advanced Mode
+        </button>
+        {mode === 'advanced' && (
+          <>
+            <button onClick={addText} className="btn">
+              Add Text
             </button>
-            <button onClick={() => handleRotate(-90)} className="btn">
-              Rotate -90°
+            <button onClick={addRectangle} className="btn">
+              Add Rectangle
             </button>
-          </div>
-          <div className="control-group">
-            <h3>Filters</h3>
-            <button onClick={handleGrayscale} className={`btn ${edits.grayscale ? 'active' : ''}`}>
-              Grayscale {edits.grayscale ? 'ON' : 'OFF'}
-            </button>
-          </div>
-          <div className="control-group">
-            <h3>Watermark</h3>
-            <input
-              type="text"
-              value={edits.watermark}
-              onChange={handleWatermarkChange}
-              placeholder="Enter watermark text"
-            />
-          </div>
-          <div className="control-group">
-            <button onClick={handleSave} className="btn primary">
-              Save Changes
-            </button>
-          </div>
-        </div>
+          </>
+        )}
+        <button onClick={handleSave} className="btn">
+          Save
+        </button>
+        <button onClick={onClose} className="btn">
+          Close
+        </button>
+      </div>
+
+      <div className="editor-content">
+        {mode === 'crop' ? (
+          <ReactCrop crop={crop} onChange={setCrop} onComplete={handleCropComplete}>
+            <img ref={imgRef} src={image} alt="Crop me" style={{ maxWidth: '100%' }} />
+          </ReactCrop>
+        ) : (
+          <canvas ref={canvasRef} width={800} height={600} style={{ border: '1px solid #ccc' }} />
+        )}
       </div>
     </div>
   )
+}
+
+async function getCroppedImg(image, crop) {
+  const canvas = document.createElement('canvas')
+  const scaleX = image.naturalWidth / image.width
+  const scaleY = image.naturalHeight / image.height
+  canvas.width = crop.width
+  canvas.height = crop.height
+  const ctx = canvas.getContext('2d')
+
+  ctx.drawImage(
+    image,
+    crop.x * scaleX,
+    crop.y * scaleY,
+    crop.width * scaleX,
+    crop.height * scaleY,
+    0,
+    0,
+    crop.width,
+    crop.height
+  )
+
+  return new Promise((resolve) => {
+    canvas.toBlob((blob) => {
+      resolve(blob)
+    }, 'image/png')
+  })
 }
 
 export default ImageEditor
